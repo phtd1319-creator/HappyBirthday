@@ -1,0 +1,4309 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#080914" />
+    <meta
+      name="description"
+      content="Một trải nghiệm chúc mừng sinh nhật 3D, dịu dàng và đầy bất ngờ."
+    />
+    <title>Sinh Nhật My 🎂✨</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts với hỗ trợ đầy đủ 100% dấu Tiếng Việt -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- GSAP for Cinematic Animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <!-- Three.js for 3D Rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- Canvas Confetti for Fireworks -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              pastelPink: "#FDF2F8",
+              roseGold: "#C57B86",
+              blush: "#FFCAD4",
+              champagne: "#F4E3D7",
+              darkBg: "#0f172a",
+            },
+            fontFamily: {
+              sans: ['"Be Vietnam Pro"', '"Inter"', "sans-serif"],
+              serif: ['"Playfair Display"', "serif"],
+              handwriting: ['"Caveat"', '"Dancing Script"', "cursive"],
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background-color: #050505;
+        user-select: none;
+      }
+
+      /* 3D Canvas */
+      #webgl-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        z-index: 1;
+        transition: filter 2s ease;
+      }
+      .blur-canvas {
+        filter: blur(20px) opacity(0.2);
+      }
+
+      /* UI Layers */
+      .ui-layer {
+        position: absolute;
+        inset: 0;
+        z-index: 10;
+        pointer-events: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      .pointer-auto {
+        pointer-events: auto;
+      }
+
+      /* Glassmorphism */
+      .glass {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
+      }
+      .glass-light {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 1);
+        box-shadow: 0 20px 50px -10px rgba(197, 123, 134, 0.2);
+      }
+
+      /* Glow Button */
+      .glow-btn {
+        position: relative;
+      }
+      .glow-btn::before {
+        content: "";
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(45deg, #ff758c, #ff7eb3, #c57b86, #fbbf24);
+        z-index: -1;
+        border-radius: 9999px;
+        filter: blur(12px);
+        opacity: 0;
+        transition: opacity 0.3s;
+        animation: pulse-glow 2s linear infinite;
+      }
+      .glow-btn:hover::before {
+        opacity: 1;
+      }
+
+      @keyframes pulse-glow {
+        0%,
+        100% {
+          filter: blur(12px) opacity(0.8);
+        }
+        50% {
+          filter: blur(18px) opacity(1);
+        }
+      }
+
+      /* Polaroid Style */
+      .polaroid {
+        background: white;
+        padding: 12px 12px 36px 12px;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        transition:
+          transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+          box-shadow 0.35s ease;
+        cursor: pointer;
+      }
+      .polaroid:hover {
+        transform: scale(1.05) translateY(-8px) rotate(0deg) !important;
+        z-index: 20;
+        box-shadow: 0 24px 40px rgba(72, 34, 49, 0.2);
+      }
+
+      #outro-gallery {
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+      #outro-gallery::-webkit-scrollbar {
+        width: 8px;
+      }
+      #outro-gallery::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      #outro-gallery::-webkit-scrollbar-thumb {
+        background: #c57b86;
+        border-radius: 10px;
+      }
+
+      /* Cinematic Polish */
+      body {
+        background: #070711;
+        color: #fff;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: 4;
+        pointer-events: none;
+        background:
+          radial-gradient(
+            ellipse at center,
+            transparent 35%,
+            rgba(2, 3, 12, 0.42) 100%
+          ),
+          linear-gradient(
+            180deg,
+            rgba(5, 7, 20, 0.12),
+            transparent 35%,
+            rgba(5, 7, 20, 0.22)
+          );
+      }
+
+      body::after {
+        content: "";
+        position: fixed;
+        inset: -50%;
+        z-index: 5;
+        pointer-events: none;
+        opacity: 0.075;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.92' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+        animation: film-grain 0.22s steps(2) infinite;
+      }
+
+      @keyframes film-grain {
+        0% {
+          transform: translate(0, 0);
+        }
+        25% {
+          transform: translate(1%, -1%);
+        }
+        50% {
+          transform: translate(-1%, 1%);
+        }
+        75% {
+          transform: translate(1%, 1%);
+        }
+        100% {
+          transform: translate(-1%, -1%);
+        }
+      }
+
+      button {
+        -webkit-appearance: none;
+        touch-action: manipulation;
+      }
+      button:focus-visible {
+        outline: 2px solid #ffe4ec;
+        outline-offset: 5px;
+      }
+
+      .glow-btn,
+      #letter-ui button,
+      #cake-ui button,
+      .skip-pill {
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+        transition:
+          transform 0.25s ease,
+          box-shadow 0.25s ease,
+          background-color 0.25s ease;
+      }
+      .glow-btn:hover,
+      #letter-ui button:hover,
+      #cake-ui button:hover,
+      .skip-pill:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 38px rgba(197, 123, 134, 0.28);
+      }
+
+      #splash-screen {
+        background:
+          radial-gradient(
+            ellipse at 50% 42%,
+            rgba(124, 58, 91, 0.22),
+            transparent 45%
+          ),
+          linear-gradient(135deg, #080914, #15101e 55%, #080914);
+      }
+      #splash-badge {
+        position: absolute;
+        top: calc(50% - 94px);
+        left: 0;
+        right: 0;
+        text-align: center;
+        color: rgba(255, 235, 242, 0.78);
+        font:
+          500 11px/1.5 Inter,
+          sans-serif;
+        letter-spacing: 0.24em;
+        padding: 0 18px;
+      }
+      #splash-screen button {
+        border-color: rgba(255, 224, 235, 0.5);
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.14),
+          rgba(197, 123, 134, 0.16)
+        );
+        box-shadow:
+          0 0 34px rgba(255, 126, 179, 0.12),
+          inset 0 1px 0 rgba(255, 255, 255, 0.16);
+      }
+
+      #countdown-text {
+        text-shadow:
+          0 0 20px rgba(255, 255, 255, 0.75),
+          0 0 70px rgba(255, 126, 179, 0.4);
+      }
+
+      #outro-gallery {
+        background:
+          radial-gradient(
+            ellipse at 15% 0%,
+            rgba(255, 255, 255, 0.75),
+            transparent 45%
+          ),
+          linear-gradient(
+            135deg,
+            rgba(253, 242, 248, 0.98),
+            rgba(255, 228, 236, 0.97)
+          );
+        scrollbar-width: thin;
+        scrollbar-color: #c57b86 transparent;
+      }
+
+      /* Modal Lightbox for Polaroid */
+      #photo-modal {
+        transition: opacity 0.3s ease;
+      }
+
+      /* Mic Blow Indicator Wave */
+      .mic-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        height: 18px;
+      }
+      .mic-bar {
+        width: 3px;
+        height: 100%;
+        background-color: #fbbf24;
+        border-radius: 9999px;
+        animation: mic-wave 1s ease-in-out infinite;
+      }
+      .mic-bar:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      .mic-bar:nth-child(3) {
+        animation-delay: 0.4s;
+      }
+      @keyframes mic-wave {
+        0%,
+        100% {
+          transform: scaleY(0.3);
+        }
+        50% {
+          transform: scaleY(1);
+        }
+      }
+
+      /* Toast Notification */
+      #toast-notice {
+        transition:
+          transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+          opacity 0.35s ease;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        body::after,
+        .glow-btn::before,
+        .mic-bar {
+          animation: none;
+        }
+      }
+    </style>
+  </head>
+  <body class="text-white">
+    <!-- Phần tử ẩn kích hoạt nạp đầy đủ Unicode tiếng Việt cho Canvas & DOM -->
+    <div
+      aria-hidden="true"
+      class="sr-only opacity-0 absolute -top-[9999px] -left-[9999px] pointer-events-none select-none"
+    >
+      <span style="font-family: &quot;Caveat&quot;; font-weight: 700"
+        >Gửi My, Chúc mừng sinh nhật ngày 22 tháng 10 thật đặc biệt, bùng nổ
+        nhiều niềm vui, ngập tràn năng lượng và thành công, nụ cười rực rỡ, an
+        yên và hạnh phúc! Mãi Rực Rỡ Nhé! Sự nghiệp thăng tiến Tiến Dũng</span
+      >
+      <span
+        style="
+          font-family: &quot;Playfair Display&quot;;
+          font-style: italic;
+          font-weight: 400;
+        "
+        >Gửi My, Chúc My sinh nhật bùng nổ nhiều niềm vui, tuổi mới ngập
+        tràn năng lượng và thành công, luôn giữ nụ cười thật tươi và tự tin tiến
+        bước! Ký tặng Tiến Dũng</span
+      >
+      <span style="font-family: &quot;Be Vietnam Pro&quot;; font-weight: 500"
+        >22 · 10 • Chúc Mừng Sinh Nhật Dành Tặng My • Tiến Dũng</span
+      >
+    </div>
+
+    <!-- 3D Canvas -->
+    <div id="webgl-container"></div>
+
+    <!-- Cụm điều khiển âm thanh (Góc trên bên phải) -->
+    <div
+      class="fixed right-4 z-50 flex items-center gap-2 pointer-auto"
+      style="top: calc(env(safe-area-inset-top, 0px) + 16px)"
+    >
+      <input
+        type="file"
+        id="custom-audio-input"
+        accept="audio/*"
+        class="hidden"
+        onchange="handleCustomAudio(event)"
+      />
+      <button
+        id="custom-music-btn"
+        onclick="document.getElementById('custom-audio-input').click()"
+        title="Đổi bài hát MP3 riêng từ máy bạn"
+        class="hidden px-3.5 h-11 rounded-full glass text-xs font-sans tracking-wide text-amber-100 flex items-center gap-1.5 transition hover:scale-105 active:scale-95 border border-white/20 shadow-md"
+      >
+        <span>🎵</span> <span class="hidden sm:inline">Đổi nhạc</span>
+      </button>
+      <button
+        id="mute-btn"
+        onclick="toggleMute()"
+        aria-label="Bật/tắt âm thanh"
+        class="hidden w-11 h-11 rounded-full glass text-lg transition hover:scale-105 active:scale-95 flex items-center justify-center"
+      >
+        🔊
+      </button>
+    </div>
+
+    <!-- Hint: Chạm mở thư -->
+    <div
+      id="envelope-hint"
+      class="ui-layer hidden opacity-0 transition-opacity duration-1000 justify-end"
+      style="padding-bottom: 14vh"
+    >
+      <p
+        class="font-serif italic text-lg text-white/90 tracking-wide animate-pulse px-6 text-center drop-shadow-md"
+      >
+        Chạm vào phong thư để mở ✉️
+      </p>
+    </div>
+
+    <!-- UI: Loading & Bắt Đầu -->
+    <div
+      id="splash-screen"
+      class="ui-layer bg-black transition-opacity duration-1000 pointer-auto"
+    >
+      <div id="splash-badge">MÓN QUÀ SINH NHẬT DÀNH TẶNG MY</div>
+      <button
+        onclick="initExperience()"
+        class="glow-btn px-10 py-4 bg-white/10 border border-white/30 backdrop-blur-md text-white font-sans font-medium rounded-full shadow-lg transition-all tracking-widest uppercase text-sm hover:bg-white/20"
+      >
+        Nhấn Để Bắt Đầu
+      </button>
+    </div>
+
+    <!-- UI: Nút Tiếp Tục Sau Khi Đọc Thư Xong -->
+    <div
+      id="letter-ui"
+      class="ui-layer opacity-0 hidden justify-end transition-opacity duration-700"
+    >
+      <div
+        class="pointer-auto"
+        style="padding-bottom: max(4vh, env(safe-area-inset-bottom, 0px))"
+      >
+        <button
+          onclick="startScene2()"
+          class="glow-btn px-10 py-4 bg-roseGold/85 backdrop-blur-md border border-white/40 text-white font-sans font-semibold rounded-full shadow-2xl transition-all tracking-widest uppercase text-sm hover:bg-roseGold"
+        >
+          Cùng Khám Phá Tiếp 🎉
+        </button>
+      </div>
+    </div>
+
+    <!-- UI: Đếm Ngược (Scene 2) -->
+    <div
+      id="countdown-ui"
+      class="ui-layer opacity-0 hidden flex flex-col items-center justify-center"
+    >
+      <div
+        id="countdown-sub"
+        class="font-serif italic text-amber-200/90 text-sm md:text-lg tracking-widest mb-3 text-center px-4 transition-all drop-shadow"
+      >
+        Đang chuẩn bị khoảnh khắc kỳ diệu...
+      </div>
+      <div
+        id="countdown-text"
+        class="font-serif text-[11rem] md:text-[14rem] font-bold text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.8)] leading-none"
+      >
+        3
+      </div>
+    </div>
+
+    <!-- UI: Bảng Dạ Quang Giữa Bầu Trời Pháo Hoa -->
+    <div
+      id="date-banner-ui"
+      class="ui-layer opacity-0 hidden pointer-events-none transition-all duration-1000 justify-start pt-16 md:pt-20"
+    >
+      <div
+        class="px-7 py-3 rounded-full glass border border-amber-300/40 shadow-[0_0_40px_rgba(251,191,36,0.35)] flex items-center gap-3"
+      >
+        <span class="text-xl animate-spin" style="animation-duration: 4s"
+          >✨</span
+        >
+        <span
+          id="date-banner-text"
+          class="font-serif text-base md:text-xl font-semibold tracking-widest text-amber-100 uppercase"
+          >22 · 10 • Chúc Mừng Sinh Nhật</span
+        >
+        <span class="text-xl animate-spin" style="animation-duration: 4s"
+          >✨</span
+        >
+      </div>
+    </div>
+
+    <!-- UI: Màn Chuyển Cảnh Điện Ảnh (Cinematic Transition Curtain) -->
+    <div
+      id="cinematic-curtain"
+      class="fixed inset-0 z-40 bg-gradient-to-b from-[#080914] via-[#1a0f24] to-[#080914] opacity-0 pointer-events-none transition-opacity duration-1000 flex flex-col items-center justify-center text-center p-6"
+    >
+      <div
+        class="w-12 h-12 rounded-full border border-amber-300/40 flex items-center justify-center text-2xl mb-4 animate-pulse"
+      >
+        🎂
+      </div>
+      <p
+        id="curtain-text"
+        class="font-serif italic text-xl md:text-2xl text-amber-100/90 tracking-wide max-w-lg drop-shadow-md"
+      >
+        Tuổi mới thật rực rỡ, nhiều năng lượng và bứt phá nhé!
+      </p>
+    </div>
+
+    <!-- UI: Nút Chuyển Cảnh Trong Pháo Hoa -->
+    <div
+      id="fireworks-nav-ui"
+      class="ui-layer opacity-0 hidden justify-end pb-8 pointer-auto transition-opacity duration-700"
+    >
+      <button
+        onclick="skipToScene3()"
+        class="skip-pill px-6 py-2.5 rounded-full bg-black/40 hover:bg-black/60 border border-white/20 backdrop-blur-md text-white/80 hover:text-white font-sans text-xs tracking-wider transition-all flex items-center gap-2"
+      >
+        <span>Bỏ qua & Xem bánh kem</span> 🍰 ➔
+      </button>
+    </div>
+
+    <!-- UI: Bánh Sinh Nhật (Scene 3) -->
+    <div
+      id="cake-ui"
+      class="ui-layer opacity-0 hidden justify-end pb-12 transition-opacity duration-700"
+    >
+      <div class="pointer-auto flex flex-col items-center gap-3">
+        <!-- Bước 1: Tự tay thắp ngọn nến ước nguyện duy nhất -->
+        <div id="candle-light-panel" class="flex flex-col items-center gap-2">
+          <div
+            class="font-serif italic text-amber-200/90 drop-shadow-md text-base md:text-lg mb-1 flex items-center gap-2 text-center px-4"
+          >
+            <span>Chạm vào ngọn nến trên bánh để thắp lửa ước mơ 🕯️</span>
+          </div>
+          <button
+            id="btn-light-candle"
+            onclick="lightNextCandle()"
+            class="glow-btn px-8 py-3.5 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 border border-amber-300 text-white font-sans font-bold rounded-full shadow-2xl transition-all flex items-center gap-2.5 transform hover:scale-105 active:scale-95 text-sm"
+          >
+            <span>🔥</span> Thắp Ngọn Nến Ước Nguyện
+          </button>
+        </div>
+
+        <!-- Bước 2: Nhắm mắt ước & Thổi nến (Hiện sau khi đã thắp nến) -->
+        <div id="candle-blow-panel" class="hidden flex-col items-center gap-3">
+          <div
+            id="cake-hint"
+            class="font-serif italic text-white/90 drop-shadow-md text-base md:text-lg mb-1 flex items-center gap-2 text-center px-4"
+          >
+            <span>Hãy nhắm mắt chuẩn bị điều ước...</span>
+          </div>
+
+          <div
+            id="mic-status"
+            class="hidden text-xs text-amber-200/90 font-sans tracking-wide bg-amber-950/40 px-3 py-1 rounded-full border border-amber-300/30 flex items-center gap-2"
+          >
+            <div class="mic-indicator">
+              <div class="mic-bar"></div>
+              <div class="mic-bar"></div>
+              <div class="mic-bar"></div>
+            </div>
+            <span>Đang lắng nghe hơi thổi vào mic của bạn...</span>
+          </div>
+
+          <button
+            id="btn-blow"
+            onclick="blowCandles()"
+            class="glow-btn px-10 py-4 bg-amber-500/85 backdrop-blur-md border border-amber-300 text-white font-sans font-bold rounded-full shadow-xl transition-all flex items-center gap-3 transform hover:scale-105 active:scale-95"
+          >
+            <span class="text-xl">🌬️</span> Thổi Nến
+          </button>
+        </div>
+
+        <button
+          id="btn-cut"
+          onclick="cutCake()"
+          class="hidden glow-btn px-10 py-4 bg-roseGold/85 backdrop-blur-md border border-white/40 text-white font-sans font-bold rounded-full shadow-xl transition-all items-center gap-3 transform hover:scale-105 active:scale-95"
+        >
+          <span class="text-xl">🍰</span> Cắt Bánh
+        </button>
+      </div>
+    </div>
+
+    <!-- UI: Nút Chuyển Nhanh Sang Gallery Khi Bánh Đã Cắt -->
+    <div
+      id="cake-nav-ui"
+      class="ui-layer opacity-0 hidden justify-end pb-8 pointer-auto transition-opacity duration-700"
+    >
+      <button
+        onclick="startOutro()"
+        class="skip-pill px-6 py-2.5 rounded-full bg-black/40 hover:bg-black/60 border border-white/20 backdrop-blur-md text-white/80 hover:text-white font-sans text-xs tracking-wider transition-all flex items-center gap-2"
+      >
+        <span>Xem album kỷ niệm</span> 📸 ➔
+      </button>
+    </div>
+
+    <!-- UI: Gallery Kết Luận (Scene 4) -->
+    <div
+      id="outro-gallery"
+      class="ui-layer opacity-0 hidden bg-pastelPink/95 pointer-auto py-16 px-4 md:px-12 items-start justify-start h-screen text-gray-800"
+    >
+      <div class="max-w-6xl w-full mx-auto pb-32">
+        <header class="text-center mb-16 mt-8">
+          <h1
+            id="gallery-title"
+            class="font-handwriting text-6xl md:text-8xl text-roseGold mb-4 drop-shadow-sm"
+          >
+            Mãi Rực Rỡ Nhé!
+          </h1>
+          <p
+            id="gallery-subtitle"
+            class="font-serif text-lg md:text-xl text-gray-500 italic max-w-2xl mx-auto px-4"
+          >
+            Những khoảnh khắc tuyệt vời nhất là khi chúng ta mỉm cười cùng nhau.
+            Chúc mừng sinh nhật!
+          </p>
+        </header>
+
+        <!-- Dynamic Polaroid Grid -->
+        <div
+          id="polaroid-container"
+          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 px-4"
+        ></div>
+
+        <div
+          class="text-center mt-16 flex flex-wrap items-center justify-center gap-4"
+        >
+          <button
+            onclick="downloadGreetingCard()"
+            class="px-6 py-3 rounded-full bg-gradient-to-r from-rose-500 to-amber-500 text-white font-sans text-sm font-semibold tracking-wider shadow-lg hover:brightness-110 active:scale-95 transition flex items-center gap-2"
+          >
+            <span>🎁</span> Tải Thiệp Kỷ Niệm
+          </button>
+          <button
+            onclick="burstMoreConfetti()"
+            class="px-6 py-3 rounded-full bg-white border border-roseGold/40 text-roseGold font-sans text-sm font-semibold tracking-wider shadow hover:bg-rose-50 active:scale-95 transition flex items-center gap-2"
+          >
+            <span>🎉</span> Thả Pháo & Tim
+          </button>
+          <button
+            onclick="location.reload()"
+            class="px-6 py-3 rounded-full bg-roseGold text-white font-sans text-sm tracking-widest uppercase shadow-lg hover:brightness-110 active:scale-95 transition"
+          >
+            Xem lại ↺
+          </button>
+        </div>
+        <div class="text-center mt-12">
+          <div class="w-16 h-1 bg-roseGold/30 mx-auto mb-6 rounded-full"></div>
+          <p
+            id="gallery-footer-text"
+            class="font-sans text-xs font-semibold uppercase tracking-widest text-gray-400"
+          >
+            Được làm riêng cho bạn 💖
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lightbox Modal for Photo Preview -->
+    <div
+      id="photo-modal"
+      onclick="closePhotoModal()"
+      class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden opacity-0 flex items-center justify-center p-4 transition-opacity duration-300"
+    >
+      <div
+        class="max-w-xl w-full bg-white p-4 rounded-lg shadow-2xl transform transition-transform"
+        onclick="event.stopPropagation()"
+      >
+        <img
+          id="modal-img"
+          src=""
+          alt="Ảnh kỷ niệm"
+          class="w-full max-h-[70vh] object-contain rounded"
+        />
+        <p
+          id="modal-caption"
+          class="font-handwriting text-3xl text-center text-gray-700 mt-4"
+        ></p>
+        <button
+          onclick="closePhotoModal()"
+          class="mt-3 block mx-auto text-xs text-gray-400 uppercase tracking-wider hover:text-gray-700"
+        >
+          Đóng [✕]
+        </button>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div
+      id="toast-notice"
+      class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-full glass border border-amber-300/40 text-amber-100 font-sans text-xs sm:text-sm font-medium tracking-wide shadow-2xl opacity-0 translate-y-8 pointer-events-none"
+    >
+      Đã sao chép lời nhắn! 💌
+    </div>
+
+    <!-- 3D LOGIC & ANIMATIONS -->
+    <script>
+      // ==========================================
+      // BẢNG ĐIỀU KHIỂN & CÁ NHÂN HÓA QUA URL PARAMETERS
+      // ==========================================
+      const CONFIG = {
+        recipientName: "My",
+        birthdayDate: "22/10",
+        letter: {
+          dateStamp: "Ngày 22 tháng 10",
+          greeting: "Gửi My,",
+          lines: [
+            "Hôm nay là ngày 22 tháng 10 thật đặc biệt,",
+            "Chúc My sinh nhật bùng nổ nhiều niềm vui,",
+            "tuổi mới ngập tràn năng lượng và thành công,",
+            "luôn giữ nụ cười thật tươi và tự tin tiến bước!",
+          ],
+          footer: "Mỗi ngày đều ngập tràn niềm vui & hạnh phúc! ✨",
+        },
+        gallery: {
+          title: "Tuổi Mới Rực Rỡ!",
+          subtitle:
+            "Chúc My một sinh nhật thật tuyệt vời, luôn đầy ắp tiếng cười, may mắn và đạt được mọi mục tiêu dự định!",
+          footerText: "Món quà bất ngờ từ những người bạn 🎉✨",
+          items: [
+            {
+              url: "https://images.unsplash.com/photo-1530103862676-de8892bc952f?w=600&q=80",
+              caption: "Tuổi mới bứt phá",
+              rotate: "-3deg",
+              offset: "0",
+            },
+            {
+              url: "https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=600&q=80",
+              caption: "Luôn vui vẻ rạng rỡ",
+              rotate: "2deg",
+              offset: "md:mt-10",
+            },
+            {
+              url: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&q=80",
+              caption: "An yên & hạnh phúc",
+              rotate: "-1deg",
+              offset: "md:mt-4",
+            },
+            {
+              url: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&q=80",
+              caption: "Sự nghiệp thăng tiến",
+              rotate: "4deg",
+              offset: "md:mt-12",
+            },
+          ],
+        },
+      };
+
+      // Đọc tham số URL: ?to=Minh&date=22.10
+      const urlParams = new URLSearchParams(window.location.search);
+      const paramTo = urlParams.get("to") || urlParams.get("name");
+      const paramDate = urlParams.get("date") || urlParams.get("day");
+
+      if (paramTo) {
+        CONFIG.recipientName = paramTo.trim();
+        CONFIG.letter.greeting = `Gửi ${CONFIG.recipientName},`;
+        document.title = `Sinh Nhật ${CONFIG.recipientName} 🎂✨`;
+      }
+      if (paramDate) {
+        CONFIG.birthdayDate = paramDate.trim();
+        CONFIG.letter.dateStamp = `Ngày ${CONFIG.birthdayDate}`;
+      }
+
+      document.getElementById("splash-badge").innerText =
+        `${CONFIG.birthdayDate} • MÓN QUÀ SINH NHẬT DÀNH TẶNG ${CONFIG.recipientName.toUpperCase()}`;
+      document.getElementById("date-banner-text").innerText =
+        `${CONFIG.birthdayDate} • Chúc Mừng Sinh Nhật ${CONFIG.recipientName}`;
+      document.getElementById("countdown-sub").innerText =
+        `Đang chuẩn bị khoảnh khắc kỳ diệu ngày ${CONFIG.birthdayDate}...`;
+      document.getElementById("curtain-text").innerText =
+        `${CONFIG.birthdayDate} • Thêm một tuổi mới thật rực rỡ, nhiều năng lượng và bứt phá nhé ${CONFIG.recipientName}!`;
+
+      // ==========================================
+      // ÂM THANH: HỘP NHẠC & FELT PIANO ACOUSTIC ENGINE
+      // ==========================================
+      const actx = new (window.AudioContext || window.webkitAudioContext)();
+      const master = actx.createGain();
+      master.gain.value = 0.85;
+      master.connect(actx.destination);
+
+      const musicBus = actx.createGain();
+      musicBus.gain.value = 0.52;
+      const musicWarmthFilter = actx.createBiquadFilter();
+      musicWarmthFilter.type = "lowpass";
+      musicWarmthFilter.frequency.value = 1650;
+      musicWarmthFilter.Q.value = 0.5;
+      musicBus.connect(musicWarmthFilter);
+      musicWarmthFilter.connect(master);
+
+      const delayL = actx.createDelay();
+      delayL.delayTime.value = 0.35;
+      const delayR = actx.createDelay();
+      delayR.delayTime.value = 0.52;
+      const feedL = actx.createGain();
+      feedL.gain.value = 0.24;
+      const feedR = actx.createGain();
+      feedR.gain.value = 0.2;
+      const echoFilter = actx.createBiquadFilter();
+      echoFilter.type = "lowpass";
+      echoFilter.frequency.value = 950;
+
+      musicWarmthFilter.connect(delayL);
+      musicWarmthFilter.connect(delayR);
+      delayL.connect(feedL);
+      feedL.connect(delayR);
+      delayR.connect(feedR);
+      feedR.connect(delayL);
+      delayL.connect(echoFilter);
+      delayR.connect(echoFilter);
+      echoFilter.connect(master);
+
+      const nbuf = (() => {
+        const b = actx.createBuffer(1, actx.sampleRate * 2, actx.sampleRate),
+          d = b.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+        return b;
+      })();
+      let isMuted = false,
+        musicTimer = null,
+        customAudio = null;
+
+      function playAcousticKey(freq, t, dur = 2.0, vel = 0.12) {
+        if (!freq || freq <= 0) return;
+        const osc1 = actx.createOscillator();
+        const osc2 = actx.createOscillator();
+        const osc3 = actx.createOscillator();
+
+        osc1.type = "sine";
+        osc1.frequency.setValueAtTime(freq, t);
+        osc2.type = "sine";
+        osc2.frequency.setValueAtTime(freq * 2.002, t);
+        osc3.type = "triangle";
+        osc3.frequency.setValueAtTime(freq, t);
+
+        const gMain = actx.createGain();
+        const g2 = actx.createGain();
+        g2.gain.value = 0.18;
+        const g3 = actx.createGain();
+        g3.gain.value = 0.08;
+
+        gMain.gain.setValueAtTime(0.0001, t);
+        gMain.gain.linearRampToValueAtTime(vel, t + 0.012);
+        gMain.gain.exponentialRampToValueAtTime(vel * 0.42, t + 0.32);
+        gMain.gain.exponentialRampToValueAtTime(0.00001, t + dur);
+
+        osc1.connect(gMain);
+        osc2.connect(g2);
+        g2.connect(gMain);
+        osc3.connect(g3);
+        g3.connect(gMain);
+        gMain.connect(musicBus);
+
+        osc1.start(t);
+        osc1.stop(t + dur + 0.05);
+        osc2.start(t);
+        osc2.stop(t + dur + 0.05);
+        osc3.start(t);
+        osc3.stop(t + dur + 0.05);
+      }
+
+      function playWarmBass(freq, t, dur = 2.8, vel = 0.09) {
+        if (!freq || freq <= 0) return;
+        const osc = actx.createOscillator();
+        const g = actx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, t);
+
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(vel, t + 0.025);
+        g.gain.exponentialRampToValueAtTime(0.00001, t + dur);
+
+        osc.connect(g);
+        g.connect(musicBus);
+        osc.start(t);
+        osc.stop(t + dur + 0.05);
+      }
+
+      function noise(t, dur, o = {}) {
+        const src = actx.createBufferSource();
+        src.buffer = nbuf;
+        src.loop = true;
+        const f = actx.createBiquadFilter();
+        f.type = o.type || "lowpass";
+        f.Q.value = o.q || 1;
+        f.frequency.setValueAtTime(o.f || 1000, t);
+        if (o.f2) f.frequency.exponentialRampToValueAtTime(o.f2, t + dur);
+        const g = actx.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(o.vol ?? 0.15, t + (o.att || 0.01));
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        src.connect(f);
+        f.connect(g);
+        g.connect(o.bus || master);
+        src.start(t, Math.random());
+        src.stop(t + dur + 0.05);
+      }
+
+      const SND = {
+        click() {
+          const t = actx.currentTime;
+          playAcousticKey(880, t, 0.4, 0.06);
+        },
+        paper() {
+          const t = actx.currentTime;
+          for (let i = 0; i < 3; i++)
+            noise(t + i * 0.12, 0.18, {
+              type: "bandpass",
+              f: 2200 + Math.random() * 800,
+              q: 0.9,
+              vol: 0.1,
+            });
+        },
+        chime() {
+          const t = actx.currentTime;
+          [523.25, 659.25, 783.99, 1046.5].forEach((f, i) =>
+            playAcousticKey(f, t + i * 0.14, 2.8, 0.09),
+          );
+        },
+        match() {
+          const t = actx.currentTime;
+          noise(t, 0.22, {
+            type: "bandpass",
+            f: 3200,
+            f2: 1200,
+            q: 1.5,
+            vol: 0.28,
+            att: 0.005,
+          });
+          noise(t + 0.12, 0.45, {
+            type: "lowpass",
+            f: 800,
+            f2: 250,
+            q: 0.8,
+            vol: 0.22,
+            att: 0.02,
+          });
+          playAcousticKey(987.77, t + 0.15, 0.8, 0.08);
+        },
+        boing() {
+          const t = actx.currentTime;
+          const osc = actx.createOscillator(),
+            g = actx.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(220, t);
+          osc.frequency.exponentialRampToValueAtTime(540, t + 0.08);
+          osc.frequency.exponentialRampToValueAtTime(280, t + 0.25);
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.linearRampToValueAtTime(0.22, t + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+          osc.connect(g);
+          g.connect(master);
+          osc.start(t);
+          osc.stop(t + 0.33);
+        },
+        tick() {
+          const t = actx.currentTime;
+          const osc1 = actx.createOscillator();
+          const g1 = actx.createGain();
+          osc1.type = "sine";
+          osc1.frequency.setValueAtTime(1046.5, t);
+          osc1.frequency.exponentialRampToValueAtTime(880, t + 0.12);
+          g1.gain.setValueAtTime(0.0001, t);
+          g1.gain.linearRampToValueAtTime(0.32, t + 0.006);
+          g1.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+          osc1.connect(g1);
+          g1.connect(master);
+          osc1.start(t);
+          osc1.stop(t + 0.36);
+
+          const osc2 = actx.createOscillator();
+          const g2 = actx.createGain();
+          osc2.type = "triangle";
+          osc2.frequency.setValueAtTime(1760, t);
+          g2.gain.setValueAtTime(0.0001, t);
+          g2.gain.linearRampToValueAtTime(0.22, t + 0.004);
+          g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.15);
+          osc2.connect(g2);
+          g2.connect(master);
+          osc2.start(t);
+          osc2.stop(t + 0.16);
+
+          const osc3 = actx.createOscillator();
+          const g3 = actx.createGain();
+          osc3.type = "sine";
+          osc3.frequency.setValueAtTime(180, t);
+          osc3.frequency.exponentialRampToValueAtTime(45, t + 0.18);
+          g3.gain.setValueAtTime(0.0001, t);
+          g3.gain.linearRampToValueAtTime(0.28, t + 0.008);
+          g3.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+          osc3.connect(g3);
+          g3.connect(master);
+          osc3.start(t);
+          osc3.stop(t + 0.23);
+        },
+        whoosh() {
+          const t = actx.currentTime;
+          noise(t, 0.8, {
+            type: "bandpass",
+            f: 400,
+            f2: 1800,
+            q: 0.8,
+            vol: 0.08,
+          });
+        },
+        pop() {
+          const t = actx.currentTime;
+          noise(t, 0.25, { f: 1800, f2: 150, vol: 0.2 });
+        },
+        blow() {
+          const t = actx.currentTime;
+          noise(t, 0.7, {
+            type: "bandpass",
+            f: 800,
+            f2: 250,
+            q: 0.6,
+            vol: 0.25,
+            att: 0.12,
+          });
+        },
+        knife() {
+          const t = actx.currentTime;
+          playAcousticKey(1174.66, t, 0.6, 0.04);
+        },
+        cheer() {
+          const t = actx.currentTime;
+          [523.25, 659.25, 783.99, 880, 1046.5].forEach((f, i) =>
+            playAcousticKey(f, t + i * 0.1, 2.5, 0.08),
+          );
+        },
+        hb() {
+          const t = actx.currentTime + 0.1;
+          [523.25, 659.25, 783.99, 1046.5].forEach((f, i) =>
+            playAcousticKey(f, t + i * 0.12, 3.0, 0.08),
+          );
+        },
+        bgm() {
+          if (musicTimer || customAudio) return;
+          const N = {
+            C2: 65.41,
+            E2: 82.41,
+            F2: 87.31,
+            G2: 98.0,
+            A2: 110.0,
+            B2: 123.47,
+            C3: 130.81,
+            D3: 146.83,
+            E3: 164.81,
+            F3: 174.61,
+            G3: 196.0,
+            A3: 220.0,
+            B3: 246.94,
+            C4: 261.63,
+            D4: 293.66,
+            E4: 329.63,
+            F4: 349.23,
+            G4: 392.0,
+            A4: 440.0,
+            B4: 493.88,
+            C5: 523.25,
+            D5: 587.33,
+            E5: 659.25,
+            F5: 698.46,
+            G5: 783.99,
+            A5: 880.0,
+            B5: 987.77,
+            C6: 1046.5,
+          };
+          const B = 0.7;
+
+          const score = [
+            { t: 0.0, mel: N.G4, dur: 0.45, vel: 0.12 },
+            { t: 0.48, mel: N.G4, dur: 0.22, vel: 0.11 },
+            {
+              t: B * 1.0,
+              mel: N.A4,
+              dur: 0.75,
+              vel: 0.14,
+              bass: N.C3,
+              chord: [N.E4, N.G4],
+            },
+            { t: B * 2.0, mel: N.G4, dur: 0.65, vel: 0.12, chord: [N.E4] },
+            { t: B * 3.0, mel: N.C5, dur: 0.75, vel: 0.14, chord: [N.G4] },
+            {
+              t: B * 4.0,
+              mel: N.B4,
+              dur: 1.45,
+              vel: 0.13,
+              bass: N.G2,
+              chord: [N.D4, N.G4],
+            },
+            { t: B * 5.0, chord: [N.D4], vel: 0.04, dur: 0.6 },
+            { t: B * 5.7, chord: [N.G3], vel: 0.03, dur: 0.6 },
+
+            { t: B * 6.3, mel: N.G4, dur: 0.45, vel: 0.12 },
+            { t: B * 6.3 + 0.48, mel: N.G4, dur: 0.22, vel: 0.11 },
+            {
+              t: B * 7.3,
+              mel: N.A4,
+              dur: 0.75,
+              vel: 0.14,
+              bass: N.G2,
+              chord: [N.D4, N.F4],
+            },
+            { t: B * 8.3, mel: N.G4, dur: 0.65, vel: 0.12, chord: [N.D4] },
+            { t: B * 9.3, mel: N.D5, dur: 0.75, vel: 0.14, chord: [N.F4] },
+            {
+              t: B * 10.3,
+              mel: N.C5,
+              dur: 1.45,
+              vel: 0.13,
+              bass: N.C3,
+              chord: [N.E4, N.G4],
+            },
+            { t: B * 11.3, chord: [N.E4], vel: 0.04, dur: 0.6 },
+            { t: B * 12.0, chord: [N.C4], vel: 0.03, dur: 0.6 },
+
+            { t: B * 12.6, mel: N.G4, dur: 0.45, vel: 0.12 },
+            { t: B * 12.6 + 0.48, mel: N.G4, dur: 0.22, vel: 0.11 },
+            {
+              t: B * 13.6,
+              mel: N.G5,
+              dur: 0.85,
+              vel: 0.16,
+              bass: N.C3,
+              chord: [N.E4, N.C5],
+            },
+            { t: B * 14.6, mel: N.E5, dur: 0.75, vel: 0.14, chord: [N.G4] },
+            { t: B * 15.6, mel: N.C5, dur: 0.75, vel: 0.13, chord: [N.E4] },
+            {
+              t: B * 16.6,
+              mel: N.B4,
+              dur: 0.7,
+              vel: 0.13,
+              bass: N.F2,
+              chord: [N.C4, N.F4],
+            },
+            { t: B * 17.35, mel: N.A4, dur: 1.35, vel: 0.14, chord: [N.C4] },
+            { t: B * 18.2, chord: [N.F3], vel: 0.04, dur: 0.6 },
+
+            { t: B * 18.8, mel: N.F5, dur: 0.45, vel: 0.13 },
+            { t: B * 18.8 + 0.48, mel: N.F5, dur: 0.22, vel: 0.12 },
+            {
+              t: B * 19.8,
+              mel: N.E5,
+              dur: 0.75,
+              vel: 0.14,
+              bass: N.C3,
+              chord: [N.G4, N.C5],
+            },
+            { t: B * 20.8, mel: N.C5, dur: 0.75, vel: 0.13, chord: [N.G4] },
+            {
+              t: B * 21.8,
+              mel: N.D5,
+              dur: 0.75,
+              vel: 0.14,
+              bass: N.G2,
+              chord: [N.F4, N.B4],
+            },
+            {
+              t: B * 22.8,
+              mel: N.C5,
+              dur: 2.8,
+              vel: 0.16,
+              bass: N.C2,
+              chord: [N.C3, N.G3, N.E4, N.G4, N.C5],
+            },
+
+            { t: B * 24.5, mel: N.E5, dur: 1.2, vel: 0.07 },
+            { t: B * 25.1, mel: N.G5, dur: 1.4, vel: 0.08 },
+            { t: B * 25.7, mel: N.C6, dur: 2.2, vel: 0.09 },
+            { t: B * 26.5, chord: [N.G4, N.C5], dur: 2.5, vel: 0.04 },
+          ];
+
+          const LOOP_DURATION = B * 28.5;
+          const scheduleCycle = (startTime) => {
+            if (customAudio) return;
+            score.forEach((note) => {
+              const noteTime = startTime + note.t;
+              if (note.mel)
+                playAcousticKey(
+                  note.mel,
+                  noteTime,
+                  note.dur || 1.8,
+                  note.vel || 0.12,
+                );
+              if (note.bass) playWarmBass(note.bass, noteTime, 3.0, 0.09);
+              if (note.chord && note.chord.length) {
+                note.chord.forEach((chFreq, chIdx) => {
+                  playAcousticKey(
+                    chFreq,
+                    noteTime + 0.05 * (chIdx + 1),
+                    (note.dur || 1.8) * 0.8,
+                    0.04,
+                  );
+                });
+              }
+            });
+          };
+
+          let currentCycleStart = actx.currentTime + 0.2;
+          scheduleCycle(currentCycleStart);
+
+          musicTimer = setInterval(() => {
+            if (customAudio) {
+              clearInterval(musicTimer);
+              musicTimer = null;
+              return;
+            }
+            if (actx.currentTime > currentCycleStart + LOOP_DURATION - 4) {
+              currentCycleStart += LOOP_DURATION;
+              scheduleCycle(currentCycleStart);
+            }
+          }, 2500);
+        },
+      };
+
+      function playSound(id) {
+        try {
+          if (actx.state === "suspended") actx.resume();
+          if (SND[id]) SND[id]();
+        } catch (e) {
+          console.info(e);
+        }
+      }
+      function unlockAudio() {
+        if (actx.state === "suspended") actx.resume();
+      }
+
+      function playFireworkSound(panX = 0) {
+        try {
+          if (actx.state === "suspended") actx.resume();
+          const t = actx.currentTime;
+          let targetBus = master;
+          if (actx.createStereoPanner) {
+            const panner = actx.createStereoPanner();
+            panner.pan.setValueAtTime(Math.max(-0.9, Math.min(0.9, panX)), t);
+            panner.connect(master);
+            targetBus = panner;
+          }
+          noise(t, 0.85, { f: 450, f2: 60, vol: 0.25, bus: targetBus });
+          for (let i = 0; i < 8; i++) {
+            noise(t + 0.18 + Math.random() * 0.8, 0.04, {
+              type: "highpass",
+              f: 4000,
+              vol: 0.04,
+              bus: targetBus,
+            });
+          }
+        } catch (e) {
+          console.info(e);
+        }
+      }
+
+      function toggleMute() {
+        isMuted = !isMuted;
+        master.gain.setTargetAtTime(isMuted ? 0 : 0.85, actx.currentTime, 0.05);
+        if (customAudio) customAudio.muted = isMuted;
+        document.getElementById("mute-btn").textContent = isMuted ? "🔇" : "🔊";
+      }
+
+      function handleCustomAudio(event) {
+        const file = event.target.files && event.target.files[0];
+        if (!file) return;
+
+        if (musicTimer) {
+          clearInterval(musicTimer);
+          musicTimer = null;
+        }
+        if (customAudio) {
+          customAudio.pause();
+          customAudio = null;
+        }
+
+        const url = URL.createObjectURL(file);
+        customAudio = new Audio(url);
+        customAudio.loop = true;
+        customAudio.muted = isMuted;
+
+        try {
+          const source = actx.createMediaElementSource(customAudio);
+          source.connect(master);
+        } catch (e) {}
+
+        unlockAudio();
+        customAudio.play().catch((e) => console.info(e));
+
+        const btn = document.getElementById("custom-music-btn");
+        if (btn) {
+          const shortName =
+            file.name.length > 12
+              ? file.name.substring(0, 10) + "..."
+              : file.name;
+          btn.innerHTML = `<span>🎵</span> <span class="hidden sm:inline">${shortName}</span>`;
+        }
+      }
+
+      document.addEventListener("click", (e) => {
+        if (
+          e.target.closest("button") &&
+          !e.target.closest("#mute-btn") &&
+          !e.target.closest("#custom-music-btn")
+        )
+          playSound("click");
+      });
+
+      // ==========================================
+      // THREE.JS SETUP & SCENE LIGHTING
+      // ==========================================
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x05060f);
+      scene.fog = new THREE.FogExp2(0x070814, 0.018);
+
+      const camera = new THREE.PerspectiveCamera(
+        45,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        250,
+      );
+      camera.position.set(0, 1.5, 7);
+
+      const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: false,
+        powerPreference: "high-performance",
+      });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.0;
+      document
+        .getElementById("webgl-container")
+        .appendChild(renderer.domElement);
+
+      const fxUniforms = { uTime: { value: 0 }, uScale: { value: 1000 } };
+
+      const skyGeo = new THREE.SphereGeometry(88, 32, 24);
+      const skyMat = new THREE.ShaderMaterial({
+        side: THREE.BackSide,
+        uniforms: {
+          uTime: fxUniforms.uTime,
+          uColorTop: { value: new THREE.Color(0x020309) },
+          uColorMid: { value: new THREE.Color(0x0a1028) },
+          uColorHorizon: { value: new THREE.Color(0x190c24) },
+          uFogColor: { value: new THREE.Color(0x070814) },
+        },
+        vertexShader: `
+          varying vec3 vWorldPosition;
+          void main() {
+            vec4 wp = modelMatrix * vec4(position, 1.0);
+            vWorldPosition = wp.xyz;
+            gl_Position = projectionMatrix * viewMatrix * wp;
+          }
+        `,
+        fragmentShader: `
+          uniform float uTime;
+          uniform vec3 uColorTop;
+          uniform vec3 uColorMid;
+          uniform vec3 uColorHorizon;
+          uniform vec3 uFogColor;
+          varying vec3 vWorldPosition;
+
+          float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
+          float noise(vec2 p) {
+            vec2 i = floor(p), f = fract(p);
+            f = f * f * (3.0 - 2.0 * f);
+            return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
+                       mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+          }
+
+          void main() {
+            vec3 dir = normalize(vWorldPosition);
+            float h = dir.y;
+            vec3 col = uColorTop;
+
+            if (h > 0.18) {
+              float t = smoothstep(0.18, 0.85, h);
+              col = mix(uColorMid, uColorTop, t);
+            } else if (h > -0.04) {
+              float t = smoothstep(-0.04, 0.18, h);
+              col = mix(uColorHorizon, uColorMid, t);
+            } else {
+              float t = smoothstep(-0.35, -0.04, h);
+              col = mix(uFogColor, uColorHorizon, t);
+            }
+
+            if (h > 0.0) {
+              float neb = noise(dir.xz * 3.2 + vec2(uTime * 0.012, uTime * 0.008));
+              neb += 0.5 * noise(dir.xz * 6.5 - vec2(uTime * 0.018));
+              vec3 nebGlow = vec3(0.16, 0.08, 0.22) * smoothstep(0.32, 0.82, neb) * smoothstep(0.0, 0.45, h);
+              col += nebGlow;
+            }
+
+            gl_FragColor = vec4(col, 1.0);
+          }
+        `,
+      });
+      const skyDome = new THREE.Mesh(skyGeo, skyMat);
+      scene.add(skyDome);
+
+      const ambientLight = new THREE.AmbientLight(0xffe4e1, 0.32);
+      scene.add(ambientLight);
+
+      const spotLight = new THREE.SpotLight(0xffffff, 1.5);
+      spotLight.position.set(5, 10, 5);
+      spotLight.angle = Math.PI / 6;
+      spotLight.penumbra = 0.8;
+      spotLight.castShadow = true;
+      spotLight.shadow.mapSize.width = 2048;
+      spotLight.shadow.mapSize.height = 2048;
+      spotLight.shadow.bias = -0.0001;
+      scene.add(spotLight);
+
+      const rimLight = new THREE.DirectionalLight(0xa5b4fc, 0.8);
+      rimLight.position.set(-5, 5, -5);
+      scene.add(rimLight);
+
+      const tableGeo = new THREE.PlaneGeometry(120, 120);
+      const tableMat = new THREE.MeshStandardMaterial({
+        color: 0x0c0e18,
+        roughness: 0.95,
+      });
+      const table = new THREE.Mesh(tableGeo, tableMat);
+      table.rotation.x = -Math.PI / 2;
+      table.position.y = -2;
+      table.receiveShadow = true;
+      scene.add(table);
+
+      // ==========================================
+      // ĐỐI TƯỢNG VÀ VẬT LIỆU DÙNG CHUNG
+      // ==========================================
+      let currentState = 0;
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
+
+      const envelopeGroup = new THREE.Group();
+      let flapPivot, letterMesh;
+
+      const cakeGroup = new THREE.Group();
+      let sliceGroup, mainCakeGroup;
+      let candleLight, flameMesh;
+      let candleObjects = [];
+      let candlesLitCount = 0;
+      let smokeParticles = [];
+      let fireworkParticles = [];
+      let rocketParticles = [];
+      let knife;
+      let starsParticles;
+      let shootingStars = [];
+      let nextShootingStarTime = 0;
+      let scene3TimeoutId = null;
+      let outroTimeoutId = null;
+
+      const decorGroup = new THREE.Group();
+      let balloons = [];
+      let giftBoxes = [];
+      let moonMesh = null;
+      let fairyDust;
+      const targetCamOffset = { x: 0, y: 0 };
+      let skyLanterns = [];
+      let fairyBulbs = [];
+      let firefliesMesh,
+        fireflyData = [];
+
+      const smokeSharedGeo = new THREE.SphereGeometry(0.06, 8, 8);
+      const smokeSharedMat = new THREE.MeshBasicMaterial({
+        color: 0xaaaaaa,
+        transparent: true,
+        opacity: 0.6,
+        depthWrite: false,
+      });
+
+      const matPaperOuter = new THREE.MeshStandardMaterial({
+        color: 0xfff2f5,
+        roughness: 0.65,
+        metalness: 0.05,
+      });
+      const matPaperLining = new THREE.MeshStandardMaterial({
+        color: 0xf5dfe5,
+        roughness: 0.75,
+        metalness: 0.02,
+      });
+      const matGoldRim = new THREE.MeshStandardMaterial({
+        color: 0xf59e0b,
+        metalness: 0.85,
+        roughness: 0.25,
+      });
+      const matRedWax = new THREE.MeshStandardMaterial({
+        color: 0x881337,
+        roughness: 0.45,
+        metalness: 0.15,
+      });
+      const matWhiteLetter = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        roughness: 0.5,
+      });
+      const matGold = new THREE.MeshStandardMaterial({
+        color: 0xfbbf24,
+        metalness: 0.9,
+        roughness: 0.1,
+      });
+
+      function createGlowTexture() {
+        const canvas = document.createElement("canvas");
+        canvas.width = 64;
+        canvas.height = 64;
+        const ctx = canvas.getContext("2d");
+        const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+        grad.addColorStop(0, "rgba(255,255,255,1)");
+        grad.addColorStop(0.3, "rgba(255,200,220,0.8)");
+        grad.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 64, 64);
+        return new THREE.CanvasTexture(canvas);
+      }
+      const particleGlowTexture = createGlowTexture();
+
+      const rocketTrailGeo = new THREE.BufferGeometry();
+      rocketTrailGeo.setAttribute(
+        "position",
+        new THREE.BufferAttribute(new Float32Array([0, 0, 0]), 3),
+      );
+      const rocketTrailMat = new THREE.PointsMaterial({
+        color: 0xffb74d,
+        size: 0.12,
+        map: particleGlowTexture,
+        transparent: true,
+        opacity: 0.85,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+
+      // Tạo Texture thư chuẩn Tiếng Việt động theo tên
+      let redrawLetterCanvas = null;
+      function createLetterTexture() {
+        const canvas = document.createElement("canvas");
+        canvas.width = 1536;
+        canvas.height = 1000;
+        const ctx = canvas.getContext("2d");
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+        redrawLetterCanvas = () => {
+          ctx.clearRect(0, 0, 1536, 1000);
+          ctx.fillStyle = "#fcf9f2";
+          ctx.fillRect(0, 0, 1536, 1000);
+          ctx.strokeStyle = "#e8d5db";
+          ctx.lineWidth = 15;
+          ctx.strokeRect(36, 36, 1464, 928);
+
+          ctx.textAlign = "right";
+          ctx.fillStyle = "#9c8e93";
+          ctx.font = 'italic 38px "Playfair Display", "Be Vietnam Pro", serif';
+          ctx.fillText(`${CONFIG.birthdayDate} • Birthday`, 1450, 115);
+
+          ctx.textAlign = "center";
+          ctx.fillStyle = "#c57b86";
+          ctx.font =
+            'bold 115px "Caveat", "Dancing Script", cursive, sans-serif';
+          ctx.fillText(CONFIG.letter.greeting, 768, 190);
+
+          ctx.fillStyle = "#3a3a3a";
+          ctx.font = 'italic 52px "Playfair Display", "Be Vietnam Pro", serif';
+          const lines = CONFIG.letter.lines;
+          lines.forEach((line, idx) => {
+            ctx.fillText(line, 768, 385 + idx * 95);
+          });
+
+          ctx.fillStyle = "#c57b86";
+          ctx.font =
+            'bold 66px "Caveat", "Dancing Script", cursive, sans-serif';
+          ctx.fillText(CONFIG.letter.footer, 768, 865);
+          tex.needsUpdate = true;
+        };
+
+        redrawLetterCanvas();
+
+        if (document.fonts) {
+          const sample =
+            "Gửi My, sinh nhật ngày 22 tháng 10 thật đặc biệt niềm vui bùng nổ";
+          Promise.all([
+            document.fonts.load('bold 115px "Caveat"', sample),
+            document.fonts.load('italic 52px "Playfair Display"', sample),
+            document.fonts.ready,
+          ])
+            .then(() => {
+              if (redrawLetterCanvas) redrawLetterCanvas();
+            })
+            .catch(() => {});
+        }
+        return tex;
+      }
+
+      // ==========================================
+      // TẠO PHONG THƯ 3D HOÀN CHỈNH
+      // ==========================================
+      function createEnvelope() {
+        const W = 4.4,
+          H = 2.9;
+        const hw = W / 2;
+        const hh = H / 2;
+
+        const backGeo = new THREE.BoxGeometry(W, H, 0.025);
+        const back = new THREE.Mesh(backGeo, matPaperOuter);
+        back.position.set(0, 0, -0.02);
+        back.castShadow = true;
+        back.receiveShadow = true;
+        envelopeGroup.add(back);
+
+        const liningGeo = new THREE.PlaneGeometry(W - 0.16, H - 0.16);
+        const lining = new THREE.Mesh(liningGeo, matPaperLining);
+        lining.position.set(0, 0, -0.007);
+        lining.receiveShadow = true;
+        envelopeGroup.add(lining);
+
+        const pocketShape = new THREE.Shape();
+        pocketShape.moveTo(-hw, -hh);
+        pocketShape.lineTo(hw, -hh);
+        pocketShape.lineTo(hw, hh);
+        pocketShape.lineTo(hw - 0.45, hh);
+        pocketShape.lineTo(0, -0.05);
+        pocketShape.lineTo(-hw + 0.45, hh);
+        pocketShape.lineTo(-hw, hh);
+        pocketShape.closePath();
+
+        const pocketGeo = new THREE.ExtrudeGeometry(pocketShape, {
+          depth: 0.02,
+          bevelEnabled: true,
+          bevelThickness: 0.005,
+          bevelSize: 0.006,
+          curveSegments: 16,
+        });
+        const frontPocket = new THREE.Mesh(pocketGeo, matPaperOuter);
+        frontPocket.position.set(0, 0, 0.025);
+        frontPocket.castShadow = true;
+        frontPocket.receiveShadow = true;
+        envelopeGroup.add(frontPocket);
+
+        const foldLineMat = new THREE.LineBasicMaterial({
+          color: 0xdeb3be,
+          transparent: true,
+          opacity: 0.45,
+        });
+        const foldLinePts = [
+          new THREE.Vector3(-hw, -hh, 0.046),
+          new THREE.Vector3(0, -0.05, 0.046),
+          new THREE.Vector3(hw, -hh, 0.046),
+        ];
+        const foldLineGeo = new THREE.BufferGeometry().setFromPoints(
+          foldLinePts,
+        );
+        const foldLineMesh = new THREE.Line(foldLineGeo, foldLineMat);
+        envelopeGroup.add(foldLineMesh);
+
+        const stampCanvas = document.createElement("canvas");
+        stampCanvas.width = 256;
+        stampCanvas.height = 320;
+        const sctx = stampCanvas.getContext("2d");
+        sctx.fillStyle = "#fff8f0";
+        sctx.fillRect(0, 0, 256, 320);
+        sctx.strokeStyle = "#c57b86";
+        sctx.lineWidth = 10;
+        sctx.strokeRect(10, 10, 236, 300);
+        sctx.fillStyle = "#ffe4e6";
+        sctx.beginPath();
+        sctx.arc(128, 125, 68, 0, Math.PI * 2);
+        sctx.fill();
+        sctx.fillStyle = "#c57b86";
+        sctx.font = "bold 56px 'Playfair Display', serif";
+        sctx.textAlign = "center";
+        sctx.fillText("22", 128, 125);
+        sctx.font = "bold 34px 'Playfair Display', serif";
+        sctx.fillText("OCT", 128, 168);
+        sctx.fillStyle = "#881337";
+        sctx.font = "bold 24px 'Inter', sans-serif";
+        sctx.fillText(`POSTAGE • ${CONFIG.birthdayDate}`, 128, 255);
+        sctx.strokeStyle = "rgba(45, 20, 30, 0.65)";
+        sctx.lineWidth = 4;
+        sctx.beginPath();
+        sctx.arc(195, 235, 65, 0, Math.PI * 2);
+        sctx.stroke();
+        sctx.font = "bold 18px 'Inter', sans-serif";
+        sctx.fillStyle = "rgba(45, 20, 30, 0.75)";
+        sctx.fillText(CONFIG.birthdayDate, 195, 240);
+
+        const stampTex = new THREE.CanvasTexture(stampCanvas);
+        const stampMat = new THREE.MeshStandardMaterial({
+          map: stampTex,
+          roughness: 0.65,
+          polygonOffset: true,
+          polygonOffsetFactor: -1,
+          polygonOffsetUnits: -1,
+        });
+        const stampMesh = new THREE.Mesh(
+          new THREE.PlaneGeometry(0.72, 0.9),
+          stampMat,
+        );
+        stampMesh.position.set(1.42, 0.68, 0.047);
+        stampMesh.rotation.z = 0.04;
+        envelopeGroup.add(stampMesh);
+
+        const flapShape = new THREE.Shape();
+        flapShape.moveTo(-hw, 0);
+        flapShape.lineTo(hw, 0);
+        flapShape.lineTo(0, -1.65);
+        flapShape.closePath();
+
+        const flapGeo = new THREE.ExtrudeGeometry(flapShape, {
+          depth: 0.015,
+          bevelEnabled: true,
+          bevelThickness: 0.005,
+          bevelSize: 0.005,
+          curveSegments: 16,
+        });
+        const flapMesh = new THREE.Mesh(flapGeo, [
+          matPaperOuter,
+          matPaperLining,
+        ]);
+        flapMesh.position.set(0, 0, 0);
+        flapMesh.castShadow = true;
+        flapMesh.receiveShadow = true;
+
+        flapPivot = new THREE.Group();
+        flapPivot.position.set(0, hh, 0.048);
+        flapPivot.add(flapMesh);
+
+        const sealCanvas = document.createElement("canvas");
+        sealCanvas.width = 256;
+        sealCanvas.height = 256;
+        const sealCtx = sealCanvas.getContext("2d");
+        sealCtx.fillStyle = "#881337";
+        sealCtx.beginPath();
+        sealCtx.arc(128, 128, 124, 0, Math.PI * 2);
+        sealCtx.fill();
+        sealCtx.strokeStyle = "#fda4af";
+        sealCtx.lineWidth = 6;
+        sealCtx.beginPath();
+        sealCtx.arc(128, 128, 106, 0, Math.PI * 2);
+        sealCtx.stroke();
+        sealCtx.fillStyle = "#ffe4e6";
+        sealCtx.font = "bold 44px 'Playfair Display', serif";
+        sealCtx.textAlign = "center";
+        sealCtx.fillText(CONFIG.birthdayDate, 128, 126);
+        sealCtx.font = "bold 20px 'Inter', sans-serif";
+        sealCtx.fillText("★ SPECIAL ★", 128, 168);
+        const sealTex = new THREE.CanvasTexture(sealCanvas);
+
+        const sealGeo = new THREE.CylinderGeometry(0.36, 0.38, 0.06, 32);
+        const sealMatArr = [
+          matRedWax,
+          new THREE.MeshStandardMaterial({ map: sealTex, roughness: 0.45 }),
+          matRedWax,
+        ];
+        const seal = new THREE.Mesh(sealGeo, sealMatArr);
+        seal.rotation.x = Math.PI / 2;
+        seal.position.set(0, -1.35, 0.038);
+        seal.castShadow = true;
+        flapMesh.add(seal);
+
+        const sealRimGeo = new THREE.TorusGeometry(0.38, 0.04, 8, 24);
+        const sealRim = new THREE.Mesh(sealRimGeo, matRedWax);
+        sealRim.position.set(0, -1.35, 0.02);
+        flapMesh.add(sealRim);
+
+        envelopeGroup.add(flapPivot);
+
+        const letterGeo = new THREE.BoxGeometry(3.85, 2.45, 0.015);
+        const letterMatArr = [
+          matWhiteLetter,
+          matWhiteLetter,
+          matWhiteLetter,
+          matWhiteLetter,
+          new THREE.MeshStandardMaterial({
+            map: createLetterTexture(),
+            roughness: 0.7,
+          }),
+          matWhiteLetter,
+        ];
+        letterMesh = new THREE.Mesh(letterGeo, letterMatArr);
+        letterMesh.position.set(0, -0.25, 0.008);
+        letterMesh.rotation.y = Math.PI;
+        letterMesh.castShadow = true;
+        letterMesh.receiveShadow = true;
+        envelopeGroup.add(letterMesh);
+
+        envelopeGroup.position.set(0, 1.35, 0);
+        scene.add(envelopeGroup);
+
+        gsap.to(envelopeGroup.position, {
+          y: 1.55,
+          duration: 2.2,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+        });
+        gsap.to(envelopeGroup.rotation, {
+          y: 0.08,
+          z: 0.02,
+          duration: 3.2,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+        });
+      }
+
+      // ==========================================
+      // TẠO BÁNH SINH NHẬT 3D (1 NGỌN NẾN DUY NHẤT)
+      // ==========================================
+      let flames = [],
+        cutFaces = [],
+        candlesOut = false;
+      function createCake() {
+        const radius = 2.2,
+          heightT1 = 1.2,
+          heightT2 = 1.0,
+          t2R = radius * 0.7,
+          topY = heightT1 / 2 + heightT2;
+        mainCakeGroup = new THREE.Group();
+        sliceGroup = new THREE.Group();
+        const SL = Math.PI / 3;
+        const grpFor = (a) => {
+          a = ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+          return a > 0.12 && a < SL - 0.12 ? sliceGroup : mainCakeGroup;
+        };
+
+        const matFrost = new THREE.MeshStandardMaterial({
+          color: 0xf8b9c9,
+          roughness: 0.35,
+        });
+        const matCream = new THREE.MeshStandardMaterial({
+          color: 0xfff6f0,
+          roughness: 0.3,
+        });
+        const matBerry = new THREE.MeshStandardMaterial({
+          color: 0xd7193f,
+          roughness: 0.25,
+          emissive: 0x3a0610,
+        });
+        const matBlue = new THREE.MeshStandardMaterial({
+          color: 0x3b4cc0,
+          roughness: 0.3,
+        });
+        const matLeaf = new THREE.MeshStandardMaterial({
+          color: 0x2f8f4e,
+          roughness: 0.6,
+        });
+        const matPearl = new THREE.MeshStandardMaterial({
+          color: 0xfff8ee,
+          metalness: 0.5,
+          roughness: 0.2,
+        });
+
+        const sector = (a, b, r) => {
+          const sh = new THREE.Shape();
+          sh.moveTo(0, 0);
+          sh.arc(0, 0, r, a, b, false);
+          sh.lineTo(0, 0);
+          return sh;
+        };
+        const body = (a, b, r, d, mats, y0, grp) => {
+          const m = new THREE.Mesh(
+            new THREE.ExtrudeGeometry(sector(a, b, r), {
+              depth: d,
+              bevelEnabled: false,
+              curveSegments: 64,
+            }),
+            mats,
+          );
+          m.rotation.x = -Math.PI / 2;
+          m.position.y = y0;
+          m.castShadow = m.receiveShadow = true;
+          grp.add(m);
+        };
+        body(
+          SL,
+          Math.PI * 2,
+          radius,
+          heightT1,
+          [matCream, matFrost],
+          -heightT1 / 2,
+          mainCakeGroup,
+        );
+        body(
+          0,
+          SL,
+          radius,
+          heightT1,
+          [matCream, matFrost],
+          -heightT1 / 2,
+          sliceGroup,
+        );
+        body(
+          SL,
+          Math.PI * 2,
+          t2R,
+          heightT2,
+          [matFrost, matCream],
+          heightT1 / 2,
+          mainCakeGroup,
+        );
+        body(
+          0,
+          SL,
+          t2R,
+          heightT2,
+          [matFrost, matCream],
+          heightT1 / 2,
+          sliceGroup,
+        );
+
+        const cutTexture = (w, h, layers) => {
+          const c = document.createElement("canvas");
+          c.width = w;
+          c.height = h;
+          const g = c.getContext("2d");
+          const sum = layers.reduce((t, l) => t + l[1], 0);
+          let y = 0;
+          layers.forEach(([col, f]) => {
+            g.fillStyle = col;
+            g.fillRect(0, y, w, (f / sum) * h + 1);
+            y += (f / sum) * h;
+          });
+          for (let i = 0; i < 500; i++) {
+            g.fillStyle =
+              Math.random() < 0.5
+                ? "rgba(255,255,255,.18)"
+                : "rgba(160,100,40,.15)";
+            g.fillRect(Math.random() * w, Math.random() * h, 2, 2);
+          }
+          g.fillStyle = "#f8b9c9";
+          g.fillRect(w * 0.96, 0, w * 0.04, h);
+          return new THREE.CanvasTexture(c);
+        };
+        const tex1 = cutTexture(512, 280, [
+          ["#f3d9a4", 5],
+          ["#fff3ee", 1.3],
+          ["#e0486a", 0.8],
+          ["#f6d28f", 5],
+          ["#fff3ee", 1.3],
+          ["#e0486a", 0.8],
+          ["#f3d9a4", 4],
+        ]);
+        const tex2 = cutTexture(360, 240, [
+          ["#f3d9a4", 4],
+          ["#fff3ee", 1.2],
+          ["#e0486a", 0.8],
+          ["#f6d28f", 4],
+          ["#fff3ee", 1],
+        ]);
+        const cutFace = (deg, R, y0, h, tex, grp) => {
+          const a = (deg * Math.PI) / 180;
+          const m = new THREE.Mesh(
+            new THREE.PlaneGeometry(R, h),
+            new THREE.MeshStandardMaterial({
+              map: tex,
+              roughness: 0.8,
+              side: THREE.DoubleSide,
+              polygonOffset: true,
+              polygonOffsetFactor: -2,
+              polygonOffsetUnits: -2,
+            }),
+          );
+          m.position.set(
+            (Math.cos(a) * R) / 2,
+            y0 + h / 2,
+            (-Math.sin(a) * R) / 2,
+          );
+          m.rotation.y = a;
+          m.visible = false;
+          grp.add(m);
+          cutFaces.push(m);
+        };
+        [
+          [0, sliceGroup],
+          [60, sliceGroup],
+          [60, mainCakeGroup],
+          [0, mainCakeGroup],
+        ].forEach(([d, g]) => {
+          cutFace(d, radius, -heightT1 / 2, heightT1, tex1, g);
+          cutFace(d, t2R, heightT1 / 2, heightT2, tex2, g);
+        });
+
+        const rosGeo = new THREE.LatheGeometry(
+          [
+            [0, 0],
+            [0.15, 0],
+            [0.17, 0.05],
+            [0.13, 0.1],
+            [0.15, 0.14],
+            [0.1, 0.18],
+            [0.11, 0.22],
+            [0.06, 0.26],
+            [0.02, 0.33],
+            [0, 0.34],
+          ].map((q) => new THREE.Vector2(q[0], q[1])),
+          16,
+        );
+        for (let i = 0; i < 30; i++) {
+          const a = ((i + 0.5) / 30) * Math.PI * 2,
+            m = new THREE.Mesh(rosGeo, matCream);
+          m.position.set(
+            Math.cos(a) * (radius - 0.16),
+            heightT1 / 2,
+            -Math.sin(a) * (radius - 0.16),
+          );
+          m.castShadow = true;
+          grpFor(a).add(m);
+        }
+        const pearlGeo = new THREE.SphereGeometry(0.07, 12, 10);
+        for (let i = 0; i < 44; i++) {
+          const a = ((i + 0.5) / 44) * Math.PI * 2,
+            m = new THREE.Mesh(pearlGeo, matPearl);
+          m.position.set(
+            Math.cos(a) * (radius + 0.02),
+            -heightT1 / 2 + 0.1,
+            -Math.sin(a) * (radius + 0.02),
+          );
+          grpFor(a).add(m);
+        }
+        const dripGeo = new THREE.CylinderGeometry(0.05, 0.03, 0.4, 8);
+        for (let i = 0; i < 18; i++) {
+          const a = ((i + 0.5) / 18) * Math.PI * 2,
+            m = new THREE.Mesh(dripGeo, matFrost);
+          m.scale.y = 0.5 + Math.random();
+          m.position.set(
+            Math.cos(a) * (t2R + 0.01),
+            topY - 0.2 * m.scale.y,
+            -Math.sin(a) * (t2R + 0.01),
+          );
+          grpFor(a).add(m);
+        }
+
+        const berryGeo = new THREE.SphereGeometry(0.17, 16, 12),
+          blueGeo = new THREE.SphereGeometry(0.1, 12, 10),
+          leafGeo = new THREE.ConeGeometry(0.1, 0.07, 6);
+        for (let i = 0; i < 8; i++) {
+          const a = Math.PI / 6 + (i / 8) * Math.PI * 2,
+            x = Math.cos(a) * 1.15,
+            z = -Math.sin(a) * 1.15,
+            m = new THREE.Mesh(
+              i % 2 ? blueGeo : berryGeo,
+              i % 2 ? matBlue : matBerry,
+            );
+          if (!(i % 2)) {
+            m.scale.y = 1.2;
+            const lf = new THREE.Mesh(leafGeo, matLeaf);
+            lf.position.y = 0.2;
+            m.add(lf);
+          }
+          m.position.set(x, topY + (i % 2 ? 0.08 : 0.15), z);
+          m.castShadow = true;
+          grpFor(a).add(m);
+        }
+
+        const spGeo = new THREE.CylinderGeometry(0.018, 0.018, 0.12, 5);
+        spGeo.rotateX(Math.PI / 2);
+        const spMats = [0xff496c, 0xffc857, 0x62e7ff, 0xffffff, 0xa78bfa].map(
+          (c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.3 }),
+        );
+        for (let i = 0; i < 100; i++) {
+          const th = Math.random() * Math.PI * 2,
+            top = i % 2 === 0;
+          const r = top
+            ? Math.random() * (t2R - 0.2)
+            : t2R + 0.2 + Math.random() * (radius - t2R - 0.55);
+          const m = new THREE.Mesh(spGeo, spMats[i % 5]);
+          m.position.set(
+            Math.cos(th) * r,
+            (top ? topY : heightT1 / 2) + 0.01,
+            -Math.sin(th) * r,
+          );
+          m.rotation.y = Math.random() * Math.PI;
+          grpFor(th).add(m);
+        }
+
+        // Texture thân nến sọc hồng kem thanh lịch
+        const cc = document.createElement("canvas");
+        cc.width = 64;
+        cc.height = 256;
+        const cg = cc.getContext("2d");
+        cg.fillStyle = "#fff5f7";
+        cg.fillRect(0, 0, 64, 256);
+        cg.strokeStyle = "#f06292";
+        cg.lineWidth = 12;
+        for (let i = -4; i < 12; i++) {
+          cg.beginPath();
+          cg.moveTo(0, i * 32);
+          cg.lineTo(64, i * 32 + 40);
+          cg.stroke();
+        }
+        const candleMat = new THREE.MeshStandardMaterial({
+          map: new THREE.CanvasTexture(cc),
+          roughness: 0.5,
+        });
+        const fp = [
+          [0, 0],
+          [0.045, 0.02],
+          [0.075, 0.09],
+          [0.07, 0.17],
+          [0.04, 0.26],
+          [0.012, 0.34],
+          [0, 0.38],
+        ].map((q) => new THREE.Vector2(q[0], q[1]));
+        const flameGeo = new THREE.LatheGeometry(fp, 16),
+          coreGeo = new THREE.LatheGeometry(
+            fp.map((v) => new THREE.Vector2(v.x * 0.5, v.y * 0.7)),
+            14,
+          );
+        const flameMat = new THREE.MeshBasicMaterial({
+            color: 0xffa21a,
+            transparent: true,
+            opacity: 0.94,
+          }),
+          coreMat = new THREE.MeshBasicMaterial({ color: 0xfff3c4 });
+
+        flames = [];
+        candleObjects = [];
+
+        // 1 NGỌN NẾN DUY NHẤT ĐẶT TRANG TRỌNG Ở TRUNG TÂM BÁNH
+        const candle = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.085, 0.09, 0.92, 24),
+          candleMat,
+        );
+        candle.position.set(0, topY + 0.46, 0);
+        candle.castShadow = true;
+        candle.userData = { isCandle: true, candleIndex: 0, isLit: false };
+
+        const wick = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.009, 0.009, 0.12, 6),
+          new THREE.MeshBasicMaterial({ color: 0x222222 }),
+        );
+        wick.position.y = 0.51;
+        candle.add(wick);
+
+        const flame = new THREE.Mesh(flameGeo, flameMat);
+        flame.position.y = 0.55;
+        flame.scale.set(0, 0, 0); // Ban đầu chưa sáng
+
+        const core = new THREE.Mesh(coreGeo, coreMat);
+        core.position.y = 0.02;
+        flame.add(core);
+
+        const glow = new THREE.Sprite(
+          new THREE.SpriteMaterial({
+            map: particleGlowTexture,
+            color: 0xffa040,
+            transparent: true,
+            opacity: 0.85,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+          }),
+        );
+        glow.scale.set(1.15, 1.15, 1);
+        glow.position.y = 0.24;
+        flame.add(glow);
+
+        candle.add(flame);
+        flames.push(flame);
+        candleObjects.push(candle);
+        mainCakeGroup.add(candle);
+
+        flameMesh = flame;
+        candleLight = new THREE.PointLight(0xffa733, 0, 8);
+        candleLight.position.set(0, topY + 1.25, 0);
+        mainCakeGroup.add(candleLight);
+
+        const plate = new THREE.Mesh(
+          new THREE.CylinderGeometry(3.0, 3.2, 0.15, 64),
+          matGold,
+        );
+        plate.position.y = -heightT1 / 2 - 0.075;
+        plate.receiveShadow = true;
+        plate.castShadow = true;
+        mainCakeGroup.add(plate);
+        const stem = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.3, 0.55, 0.75, 32),
+          matGold,
+        );
+        stem.position.y = -1.125;
+        mainCakeGroup.add(stem);
+        const foot = new THREE.Mesh(
+          new THREE.CylinderGeometry(1.2, 1.3, 0.1, 48),
+          matGold,
+        );
+        foot.position.y = -1.45;
+        mainCakeGroup.add(foot);
+
+        const tagCanvas = document.createElement("canvas");
+        tagCanvas.width = 256;
+        tagCanvas.height = 128;
+        const tctx = tagCanvas.getContext("2d");
+        tctx.fillStyle = "#2c1810";
+        tctx.beginPath();
+        tctx.roundRect(6, 6, 244, 116, 18);
+        tctx.fill();
+        tctx.strokeStyle = "#eab308";
+        tctx.lineWidth = 5;
+        tctx.stroke();
+        tctx.fillStyle = "#fef08a";
+        tctx.font = "bold 46px 'Playfair Display', serif";
+        tctx.textAlign = "center";
+        tctx.fillText(CONFIG.birthdayDate, 128, 62);
+        tctx.fillStyle = "#fed7aa";
+        tctx.font = "bold 20px 'Inter', sans-serif";
+        tctx.fillText("HAPPY BIRTHDAY", 128, 96);
+
+        const tagTex = new THREE.CanvasTexture(tagCanvas);
+        const tagMat = new THREE.MeshStandardMaterial({
+          map: tagTex,
+          roughness: 0.35,
+          metalness: 0.1,
+        });
+        const chocoTag = new THREE.Mesh(
+          new THREE.BoxGeometry(0.88, 0.44, 0.04),
+          tagMat,
+        );
+        chocoTag.position.set(0, topY + 0.22, 1.05);
+        chocoTag.rotation.x = -0.22;
+        chocoTag.castShadow = true;
+        mainCakeGroup.add(chocoTag);
+
+        cakeGroup.add(mainCakeGroup);
+        cakeGroup.add(sliceGroup);
+        cakeGroup.position.y = -10;
+        cakeGroup.rotation.y = -Math.PI / 6;
+        scene.add(cakeGroup);
+
+        knife = new THREE.Group();
+        const blade = new THREE.Mesh(
+          new THREE.BoxGeometry(0.04, 1.0, 2.5),
+          new THREE.MeshStandardMaterial({
+            color: 0xd8dde3,
+            metalness: 0.95,
+            roughness: 0.12,
+          }),
+        );
+        blade.position.z = 1;
+        blade.castShadow = true;
+        const handle = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.1, 0.1, 1.0),
+          new THREE.MeshStandardMaterial({ color: 0x3b2f2f, roughness: 0.6 }),
+        );
+        handle.rotation.x = Math.PI / 2;
+        handle.position.set(0, 0.35, -0.7);
+        knife.add(blade, handle);
+        knife.visible = false;
+        cakeGroup.add(knife);
+      }
+
+      // ==========================================
+      // PHÁO HOA 3D GLOW
+      // ==========================================
+      const fireworkPalette = [
+        0xff496c, 0xffc857, 0x62e7ff, 0xa78bfa, 0x7dffb3, 0xffffff, 0xff7eb3,
+      ];
+      const flashPool = Array.from({ length: 8 }, () => {
+        const l = new THREE.PointLight(0xffffff, 0, 7);
+        scene.add(l);
+        return l;
+      });
+      let flashIdx = 0;
+
+      function makeSparkMat() {
+        return new THREE.ShaderMaterial({
+          uniforms: {
+            uTime: fxUniforms.uTime,
+            uScale: fxUniforms.uScale,
+            uOpacity: { value: 1 },
+          },
+          vertexShader: `attribute float aSize; attribute float aPhase; attribute vec3 aColor; uniform float uScale; varying vec3 vColor; varying float vPhase;
+            void main() { vColor = aColor; vPhase = aPhase; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_PointSize = aSize * uScale / -mv.z; gl_Position = projectionMatrix * mv; }`,
+          fragmentShader: `uniform float uTime; uniform float uOpacity; varying vec3 vColor; varying float vPhase;
+            void main() {
+              vec2 p = gl_PointCoord - 0.5; float d = length(p);
+              float glow = pow(max(0.0, 1.0 - d * 2.0), 2.0);
+              float star = max(0.0, 1.0 - abs(p.x) * 16.0) * max(0.0, 1.0 - abs(p.y) * 2.2) + max(0.0, 1.0 - abs(p.y) * 16.0) * max(0.0, 1.0 - abs(p.x) * 2.2);
+              float tw = 0.5 + 0.5 * sin(uTime * 14.0 + vPhase * 6.2831);
+              float a = (glow * (0.55 + 0.45 * tw) + star * tw) * clamp(uOpacity, 0.0, 1.0);
+              gl_FragColor = vec4(vColor * (1.0 + star), a);
+            }`,
+          transparent: true,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        });
+      }
+
+      function sparkPoints(pos, col, size, ph) {
+        const g = new THREE.BufferGeometry();
+        g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+        g.setAttribute("aColor", new THREE.BufferAttribute(col, 3));
+        g.setAttribute("aSize", new THREE.BufferAttribute(size, 1));
+        g.setAttribute("aPhase", new THREE.BufferAttribute(ph, 1));
+        const pts = new THREE.Points(g, makeSparkMat());
+        pts.frustumCulled = false;
+        return pts;
+      }
+
+      function createFireworkParticles(x, y, z, colorHex, type = "circle") {
+        const count = type === "dust" ? 280 : type === "star" ? 220 : 200;
+        const pos = new Float32Array(count * 3),
+          col = new Float32Array(count * 3),
+          size = new Float32Array(count),
+          ph = new Float32Array(count);
+        const vels = [],
+          base = new THREE.Color(colorHex),
+          white = new THREE.Color(0xffffff),
+          tmp = new THREE.Color();
+        const alt = new THREE.Color(
+          fireworkPalette[Math.floor(Math.random() * fireworkPalette.length)],
+        );
+
+        let life = 1.2;
+        let gravity = 0.0014;
+
+        if (type === "star") {
+          life = 1.35;
+          gravity = 0.00045;
+          const Rout = 0.088,
+            Rin = 0.034;
+          const starVerts = [];
+          for (let j = 0; j < 10; j++) {
+            const a = Math.PI / 2 + j * (Math.PI / 5);
+            const r = j % 2 === 0 ? Rout : Rin;
+            starVerts.push({ x: r * Math.cos(a), y: r * Math.sin(a) });
+          }
+
+          const starRot = (Math.random() - 0.5) * 0.6;
+          const cosR = Math.cos(starRot),
+            sinR = Math.sin(starRot);
+
+          for (let i = 0; i < count; i++) {
+            pos[i * 3] = x;
+            pos[i * 3 + 1] = y;
+            pos[i * 3 + 2] = z;
+            const seg = i % 10;
+            const p1 = starVerts[seg],
+              p2 = starVerts[(seg + 1) % 10];
+            const prog = Math.random();
+            const edgeX = p1.x + (p2.x - p1.x) * prog;
+            const edgeY = p1.y + (p2.y - p1.y) * prog;
+            const rx = edgeX * cosR - edgeY * sinR;
+            const ry = edgeX * sinR + edgeY * cosR;
+            const spread =
+              Math.random() < 0.25
+                ? 0.3 + Math.random() * 0.6
+                : 0.95 + (Math.random() - 0.5) * 0.1;
+            vels.push({
+              x: rx * spread,
+              y: ry * spread,
+              z: (Math.random() - 0.5) * 0.012,
+            });
+
+            tmp
+              .copy(base)
+              .lerp(Math.random() < 0.35 ? alt : white, Math.random() * 0.5);
+            col[i * 3] = tmp.r;
+            col[i * 3 + 1] = tmp.g;
+            col[i * 3 + 2] = tmp.b;
+            size[i] = 0.14 + Math.random() * 0.22;
+            ph[i] = Math.random();
+          }
+        } else if (type === "dust") {
+          life = 1.65;
+          gravity = 0.0009;
+
+          for (let i = 0; i < count; i++) {
+            pos[i * 3] = x;
+            pos[i * 3 + 1] = y;
+            pos[i * 3 + 2] = z;
+            const th = Math.random() * Math.PI * 2;
+            const cp = Math.random() * 2 - 1;
+            const sp = Math.sqrt(Math.max(0, 1 - cp * cp));
+            const speed = 0.018 + Math.random() * 0.038;
+
+            vels.push({
+              x: sp * Math.cos(th) * speed * 1.15,
+              y: sp * Math.sin(th) * speed * 0.85 + 0.01,
+              z: cp * speed * 0.55,
+            });
+
+            tmp.copy(base).lerp(white, 0.45 + Math.random() * 0.4);
+            col[i * 3] = tmp.r;
+            col[i * 3 + 1] = tmp.g;
+            col[i * 3 + 2] = tmp.b;
+            size[i] = 0.09 + Math.random() * 0.15;
+            ph[i] = Math.random();
+          }
+        } else {
+          life = 1.25;
+          gravity = 0.0014;
+
+          for (let i = 0; i < count; i++) {
+            pos[i * 3] = x;
+            pos[i * 3 + 1] = y;
+            pos[i * 3 + 2] = z;
+            const th = Math.random() * Math.PI * 2;
+            const cp = Math.random() * 2 - 1;
+            const sp = Math.sqrt(Math.max(0, 1 - cp * cp));
+            const speed = 0.045 + Math.random() * 0.038;
+
+            vels.push({
+              x: sp * Math.cos(th) * speed,
+              y: sp * Math.sin(th) * speed,
+              z: cp * speed * 0.6,
+            });
+
+            tmp
+              .copy(base)
+              .lerp(Math.random() < 0.3 ? alt : white, Math.random() * 0.5);
+            col[i * 3] = tmp.r;
+            col[i * 3 + 1] = tmp.g;
+            col[i * 3 + 2] = tmp.b;
+            size[i] = 0.13 + Math.random() * 0.18;
+            ph[i] = Math.random();
+          }
+        }
+
+        const points = sparkPoints(pos, col, size, ph);
+        scene.add(points);
+        fireworkParticles.push({ mesh: points, vels, life, gravity });
+        playFireworkSound(x / 4.5);
+
+        const flash = flashPool[flashIdx++ % flashPool.length];
+        gsap.killTweensOf(flash);
+        flash.color.setHex(colorHex);
+        flash.position.set(x, y, z);
+        flash.intensity = 3.5;
+        gsap.to(flash, { intensity: 0, duration: 0.5 });
+      }
+
+      function launchFirework(
+        x,
+        targetY,
+        z,
+        colorHex,
+        delay = 0,
+        type = "circle",
+      ) {
+        setTimeout(() => {
+          if (currentState !== 2) return;
+          playSound("whoosh");
+          const rocket = new THREE.Mesh(
+            new THREE.SphereGeometry(0.06, 8, 8),
+            new THREE.MeshBasicMaterial({ color: 0xffe8b0 }),
+          );
+          rocket.position.set(x, -3.8, z);
+          scene.add(rocket);
+          rocketParticles.push({
+            mesh: rocket,
+            targetY,
+            colorHex,
+            type,
+            speed: 0.12 + Math.random() * 0.03,
+            trail: 0,
+          });
+        }, delay);
+      }
+
+      // ==========================================
+      // TRANG TRÍ BÀN TIỆC & BẦU TRỜI
+      // ==========================================
+      function createSurroundings() {
+        giftBoxes = [];
+        const createGiftBox = (w, h, d, colHex, ribHex, px, py, pz, rotY) => {
+          const boxG = new THREE.Group();
+          const baseMat = new THREE.MeshStandardMaterial({
+            color: colHex,
+            roughness: 0.45,
+            metalness: 0.1,
+          });
+          const ribMat = new THREE.MeshStandardMaterial({
+            color: ribHex,
+            roughness: 0.25,
+            metalness: 0.35,
+          });
+
+          const box = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), baseMat);
+          box.castShadow = true;
+          box.receiveShadow = true;
+          boxG.add(box);
+
+          const lid = new THREE.Mesh(
+            new THREE.BoxGeometry(w * 1.05, h * 0.18, d * 1.05),
+            baseMat,
+          );
+          lid.position.y = h * 0.44;
+          lid.castShadow = true;
+          boxG.add(lid);
+
+          const ribH = new THREE.Mesh(
+            new THREE.BoxGeometry(w * 1.07, h * 1.02, d * 0.22),
+            ribMat,
+          );
+          const ribV = new THREE.Mesh(
+            new THREE.BoxGeometry(w * 0.22, h * 1.02, d * 1.07),
+            ribMat,
+          );
+          boxG.add(ribH, ribV);
+
+          const knot = new THREE.Mesh(
+            new THREE.SphereGeometry(w * 0.14, 12, 10),
+            ribMat,
+          );
+          knot.position.y = h * 0.54;
+          boxG.add(knot);
+
+          boxG.position.set(px, py + h / 2, pz);
+          boxG.rotation.y = rotY;
+          boxG.userData = { isGiftBox: true, lid, baseY: lid.position.y };
+          decorGroup.add(boxG);
+          giftBoxes.push(boxG);
+        };
+
+        createGiftBox(
+          1.15,
+          0.95,
+          1.15,
+          0xf6d8dc,
+          0xfbbf24,
+          -3.9,
+          -2.0,
+          -0.6,
+          0.25,
+        );
+        createGiftBox(
+          0.72,
+          0.65,
+          0.72,
+          0xdfd8f5,
+          0xffffff,
+          -2.9,
+          -2.0,
+          0.5,
+          -0.35,
+        );
+        createGiftBox(
+          1.05,
+          1.1,
+          1.05,
+          0xfdf7f0,
+          0xc57b86,
+          3.8,
+          -2.0,
+          -0.4,
+          -0.3,
+        );
+        createGiftBox(
+          0.85,
+          0.45,
+          0.85,
+          0xfce7f3,
+          0xfbbf24,
+          2.9,
+          -2.0,
+          0.6,
+          0.4,
+        );
+
+        const petalGeo = new THREE.CylinderGeometry(0.08, 0.09, 0.005, 6);
+        const petalColors = [0xfbcfe8, 0xf472b6, 0xfda4af, 0xffcad4, 0xffffff];
+        const petalMats = petalColors.map(
+          (c) =>
+            new THREE.MeshStandardMaterial({
+              color: c,
+              roughness: 0.85,
+              side: THREE.DoubleSide,
+            }),
+        );
+
+        for (let i = 0; i < 40; i++) {
+          const petal = new THREE.Mesh(
+            petalGeo,
+            petalMats[i % petalMats.length],
+          );
+          const angle = Math.random() * Math.PI * 2;
+          const dist = 1.3 + Math.random() * 3.4;
+          const px = Math.cos(angle) * dist + (Math.random() - 0.5) * 1.5;
+          const pz = Math.sin(angle) * dist * 0.6 + 0.3;
+
+          petal.position.set(px, -1.99, pz);
+          petal.rotation.set(
+            (Math.random() - 0.5) * 0.15,
+            Math.random() * Math.PI * 2,
+            (Math.random() - 0.5) * 0.15,
+          );
+          petal.scale.set(
+            0.8 + Math.random() * 0.6,
+            1,
+            0.8 + Math.random() * 0.6,
+          );
+          decorGroup.add(petal);
+        }
+
+        const balloonGeo = new THREE.SphereGeometry(0.38, 24, 18);
+        balloonGeo.scale(1.0, 1.28, 0.96);
+        const knotGeo = new THREE.ConeGeometry(0.045, 0.08, 8);
+
+        const balloonConfigs = [
+          {
+            x: -4.4,
+            y: 1.6,
+            z: -2.8,
+            color: 0xffb3c6,
+            metal: 0.35,
+            rough: 0.2,
+            speed: 1.2,
+            phase: 0,
+          },
+          {
+            x: -3.8,
+            y: 2.5,
+            z: -3.4,
+            color: 0xf5d061,
+            metal: 0.6,
+            rough: 0.18,
+            speed: 1.0,
+            phase: 1.5,
+          },
+          {
+            x: -4.8,
+            y: 2.9,
+            z: -3.1,
+            color: 0xfff0f5,
+            metal: 0.25,
+            rough: 0.15,
+            speed: 1.4,
+            phase: 2.8,
+          },
+          {
+            x: -3.4,
+            y: 1.9,
+            z: -2.2,
+            color: 0xd8b4e2,
+            metal: 0.3,
+            rough: 0.25,
+            speed: 1.1,
+            phase: 4.0,
+          },
+          {
+            x: 4.4,
+            y: 1.8,
+            z: -2.7,
+            color: 0xf5d061,
+            metal: 0.6,
+            rough: 0.18,
+            speed: 1.1,
+            phase: 0.8,
+          },
+          {
+            x: 3.8,
+            y: 2.6,
+            z: -3.3,
+            color: 0xffb3c6,
+            metal: 0.35,
+            rough: 0.2,
+            speed: 1.3,
+            phase: 2.2,
+          },
+          {
+            x: 4.9,
+            y: 2.8,
+            z: -3.0,
+            color: 0xffffff,
+            metal: 0.3,
+            rough: 0.15,
+            speed: 0.9,
+            phase: 3.5,
+          },
+          {
+            x: 3.5,
+            y: 1.5,
+            z: -2.1,
+            color: 0xffcad4,
+            metal: 0.4,
+            rough: 0.22,
+            speed: 1.2,
+            phase: 5.0,
+          },
+        ];
+
+        balloons = balloonConfigs.map((cfg) => {
+          const bGroup = new THREE.Group();
+          const mat = new THREE.MeshStandardMaterial({
+            color: cfg.color,
+            metalness: cfg.metal,
+            roughness: cfg.rough,
+          });
+
+          const sphere = new THREE.Mesh(balloonGeo, mat);
+          sphere.castShadow = true;
+          sphere.userData = { isBalloon: true, group: bGroup };
+          bGroup.add(sphere);
+
+          const knot = new THREE.Mesh(knotGeo, mat);
+          knot.position.y = -0.51;
+          knot.rotation.x = Math.PI;
+          bGroup.add(knot);
+
+          const curvePts = [
+            new THREE.Vector3(0, -0.54, 0),
+            new THREE.Vector3(
+              Math.sin(cfg.phase) * 0.08,
+              -1.2,
+              Math.cos(cfg.phase) * 0.05,
+            ),
+            new THREE.Vector3(
+              -Math.sin(cfg.phase) * 0.08,
+              -2.1,
+              -Math.cos(cfg.phase) * 0.05,
+            ),
+            new THREE.Vector3(0, -3.2, 0),
+          ];
+          const lineCurve = new THREE.CatmullRomCurve3(curvePts);
+          const lineGeo = new THREE.BufferGeometry().setFromPoints(
+            lineCurve.getPoints(18),
+          );
+          const lineMat = new THREE.LineBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.35,
+          });
+          const string = new THREE.Line(lineGeo, lineMat);
+          bGroup.add(string);
+
+          bGroup.position.set(cfg.x, cfg.y, cfg.z);
+          bGroup.userData = { isBalloon: true, sphere };
+          decorGroup.add(bGroup);
+
+          return {
+            mesh: bGroup,
+            baseY: cfg.y,
+            speed: cfg.speed,
+            phase: cfg.phase,
+          };
+        });
+
+        const dustCount = 110;
+        const dustPos = new Float32Array(dustCount * 3);
+        const dustVels = [];
+        const dustCol = new Float32Array(dustCount * 3);
+        const c1 = new THREE.Color(0xffe4b5);
+        const c2 = new THREE.Color(0xffb6c1);
+
+        for (let i = 0; i < dustCount; i++) {
+          dustPos[i * 3] = (Math.random() - 0.5) * 12;
+          dustPos[i * 3 + 1] = -1.6 + Math.random() * 6.2;
+          dustPos[i * 3 + 2] = -4.5 + Math.random() * 7.5;
+
+          const mixColor = Math.random() < 0.6 ? c1 : c2;
+          dustCol[i * 3] = mixColor.r;
+          dustCol[i * 3 + 1] = mixColor.g;
+          dustCol[i * 3 + 2] = mixColor.b;
+
+          dustVels.push({
+            vy: 0.003 + Math.random() * 0.005,
+            phase: Math.random() * Math.PI * 2,
+            sway: 0.002 + Math.random() * 0.003,
+          });
+        }
+
+        const dustGeo = new THREE.BufferGeometry();
+        dustGeo.setAttribute("position", new THREE.BufferAttribute(dustPos, 3));
+        dustGeo.setAttribute("color", new THREE.BufferAttribute(dustCol, 3));
+        dustGeo.userData = { vels: dustVels };
+
+        const dustMat = new THREE.PointsMaterial({
+          size: 0.08,
+          map: particleGlowTexture,
+          vertexColors: true,
+          transparent: true,
+          opacity: 0.75,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        });
+
+        fairyDust = new THREE.Points(dustGeo, dustMat);
+        decorGroup.add(fairyDust);
+
+        const tableLightLeft = new THREE.PointLight(0xffa767, 0.9, 7.5);
+        tableLightLeft.position.set(-3.5, -1.1, 0.2);
+        decorGroup.add(tableLightLeft);
+
+        const tableLightRight = new THREE.PointLight(0xff94b8, 0.75, 7.5);
+        tableLightRight.position.set(3.5, -1.1, 0.2);
+        decorGroup.add(tableLightRight);
+
+        function createMoonTexture() {
+          const c = document.createElement("canvas");
+          c.width = 512;
+          c.height = 512;
+          const ctx = c.getContext("2d");
+
+          const g = ctx.createRadialGradient(256, 256, 70, 256, 256, 240);
+          g.addColorStop(0, "rgba(255, 248, 225, 0.45)");
+          g.addColorStop(0.35, "rgba(255, 225, 185, 0.2)");
+          g.addColorStop(0.7, "rgba(215, 185, 240, 0.06)");
+          g.addColorStop(1, "rgba(0, 0, 0, 0)");
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, 512, 512);
+
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(256, 256, 115, 0, Math.PI * 2, false);
+          ctx.fillStyle = "#fffdf5";
+          ctx.shadowColor = "#ffe3a8";
+          ctx.shadowBlur = 35;
+          ctx.fill();
+
+          ctx.globalCompositeOperation = "destination-out";
+          ctx.beginPath();
+          ctx.arc(306, 226, 110, 0, Math.PI * 2, false);
+          ctx.fill();
+          ctx.restore();
+
+          return new THREE.CanvasTexture(c);
+        }
+
+        moonMesh = new THREE.Mesh(
+          new THREE.PlaneGeometry(7.2, 7.2),
+          new THREE.MeshBasicMaterial({
+            map: createMoonTexture(),
+            transparent: true,
+            depthWrite: false,
+          }),
+        );
+        moonMesh.position.set(-14.5, 16.5, -34);
+        moonMesh.rotation.z = -0.15;
+        moonMesh.userData = { isMoon: true };
+        decorGroup.add(moonMesh);
+
+        const moonLight = new THREE.DirectionalLight(0xdbeafe, 0.35);
+        moonLight.position.set(-14.5, 16.5, -34);
+        scene.add(moonLight);
+
+        const lanternGeo = new THREE.CylinderGeometry(
+          0.2,
+          0.15,
+          0.42,
+          7,
+          1,
+          true,
+        );
+        const lanternCapGeo = new THREE.CylinderGeometry(0.04, 0.2, 0.08, 7);
+        const lanternMat = new THREE.MeshStandardMaterial({
+          color: 0xffa040,
+          emissive: 0xff6a00,
+          emissiveIntensity: 1.25,
+          roughness: 0.5,
+          transparent: true,
+          opacity: 0.92,
+          side: THREE.DoubleSide,
+        });
+        const lanternGlowMat = new THREE.SpriteMaterial({
+          map: particleGlowTexture,
+          color: 0xffb347,
+          transparent: true,
+          opacity: 0.8,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        });
+
+        skyLanterns = [];
+        for (let i = 0; i < 22; i++) {
+          const lGrp = new THREE.Group();
+          const body = new THREE.Mesh(lanternGeo, lanternMat);
+          const cap = new THREE.Mesh(lanternCapGeo, lanternMat);
+          cap.position.y = 0.23;
+          const glow = new THREE.Sprite(lanternGlowMat);
+          glow.scale.set(1.15, 1.15, 1);
+          glow.position.y = -0.05;
+
+          lGrp.add(body, cap, glow);
+
+          const lx = (Math.random() - 0.5) * 38;
+          const ly = -1.5 + Math.random() * 22;
+          const lz = -12 - Math.random() * 26;
+          const scale = 0.7 + ((lz + 38) / 38) * 0.8;
+          lGrp.scale.setScalar(scale);
+          lGrp.position.set(lx, ly, lz);
+          lGrp.rotation.y = Math.random() * Math.PI;
+
+          decorGroup.add(lGrp);
+
+          skyLanterns.push({
+            mesh: lGrp,
+            baseX: lx,
+            speedY: 0.008 + Math.random() * 0.012,
+            swaySpeed: 0.8 + Math.random() * 1.2,
+            swayAmp: 0.15 + Math.random() * 0.25,
+            phase: Math.random() * Math.PI * 2,
+            tilt: 0.04 + Math.random() * 0.06,
+          });
+        }
+
+        const stringConfigs = [
+          {
+            p1: [-5.6, 4.2, -1.8],
+            pMid: [0, 2.7, -2.4],
+            p2: [5.6, 4.3, -1.8],
+            count: 18,
+          },
+          {
+            p1: [-6.4, 5.4, -3.2],
+            pMid: [0, 3.8, -3.8],
+            p2: [6.4, 5.5, -3.2],
+            count: 20,
+          },
+        ];
+        const bulbGeo = new THREE.SphereGeometry(0.045, 8, 8);
+        const bulbMatShared = new THREE.MeshBasicMaterial({ color: 0xfff0b3 });
+        const wireMat = new THREE.LineBasicMaterial({
+          color: 0x444455,
+          transparent: true,
+          opacity: 0.45,
+        });
+
+        fairyBulbs = [];
+        stringConfigs.forEach((cfg) => {
+          const curve = new THREE.QuadraticBezierCurve3(
+            new THREE.Vector3(...cfg.p1),
+            new THREE.Vector3(...cfg.pMid),
+            new THREE.Vector3(...cfg.p2),
+          );
+          const wireGeo = new THREE.BufferGeometry().setFromPoints(
+            curve.getPoints(36),
+          );
+          const wire = new THREE.Line(wireGeo, wireMat);
+          decorGroup.add(wire);
+
+          for (let i = 0; i <= cfg.count; i++) {
+            const t = i / cfg.count;
+            const pt = curve.getPoint(t);
+            const bulb = new THREE.Mesh(bulbGeo, bulbMatShared.clone());
+            bulb.position.copy(pt);
+
+            const glow = new THREE.Sprite(
+              new THREE.SpriteMaterial({
+                map: particleGlowTexture,
+                color: 0xffd175,
+                transparent: true,
+                opacity: 0.65,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+              }),
+            );
+            glow.scale.set(0.35, 0.35, 1);
+            bulb.add(glow);
+
+            decorGroup.add(bulb);
+            fairyBulbs.push({
+              mesh: bulb,
+              glow,
+              phase: Math.random() * Math.PI * 2,
+              speed: 1.5 + Math.random() * 1.5,
+            });
+          }
+        });
+
+        const ffCount = 28;
+        const ffPos = new Float32Array(ffCount * 3);
+        fireflyData = [];
+        for (let i = 0; i < ffCount; i++) {
+          const x = (Math.random() - 0.5) * 8.5;
+          const y = -1.2 + Math.random() * 4.2;
+          const z = -2.5 + Math.random() * 5.0;
+          ffPos[i * 3] = x;
+          ffPos[i * 3 + 1] = y;
+          ffPos[i * 3 + 2] = z;
+          fireflyData.push({
+            baseX: x,
+            baseY: y,
+            baseZ: z,
+            speedX: 0.6 + Math.random() * 0.8,
+            speedY: 0.5 + Math.random() * 0.7,
+            speedZ: 0.7 + Math.random() * 0.9,
+            ampX: 0.6 + Math.random() * 0.8,
+            ampY: 0.4 + Math.random() * 0.6,
+            ampZ: 0.5 + Math.random() * 0.7,
+            phase: Math.random() * Math.PI * 2,
+          });
+        }
+        const ffGeo = new THREE.BufferGeometry();
+        ffGeo.setAttribute("position", new THREE.BufferAttribute(ffPos, 3));
+        const ffMat = new THREE.PointsMaterial({
+          size: 0.16,
+          map: particleGlowTexture,
+          color: 0xc8ff64,
+          transparent: true,
+          opacity: 0.85,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        });
+        firefliesMesh = new THREE.Points(ffGeo, ffMat);
+        decorGroup.add(firefliesMesh);
+
+        scene.add(decorGroup);
+      }
+
+      createEnvelope();
+      createCake();
+      createSurroundings();
+
+      // ==========================================
+      // RESPONSIVE & CẢM BIẾN CON QUAY HỒI CHUYỂN
+      // ==========================================
+      const view = { letterZ: 3.8, letterY: 1.5, cakeZ: 6 };
+      function resizeExperience() {
+        const w = window.innerWidth,
+          h = window.innerHeight,
+          a = w / h;
+        camera.aspect = a;
+        camera.fov = a < 1.2 ? Math.min(78, 45 + (1.2 - a) * 45) : 45;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+        const halfV = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+        const dist = Math.max(
+          3.2,
+          3.85 / (0.86 * 2 * halfV * a),
+          2.45 / (0.62 * 2 * halfV),
+        );
+        view.letterZ = 7 - dist;
+        view.letterY = 1.5 + dist * halfV * 0.14;
+        fxUniforms.uScale.value = (h * renderer.getPixelRatio()) / 2 / halfV;
+        view.cakeZ = a < 1 ? 8.5 : 6;
+      }
+      window.addEventListener("resize", resizeExperience);
+      resizeExperience();
+
+      window.addEventListener("pointermove", (event) => {
+        targetCamOffset.x =
+          ((event.clientX / window.innerWidth) * 2 - 1) * 0.42;
+        targetCamOffset.y =
+          (-(event.clientY / window.innerHeight) * 2 + 1) * 0.2;
+
+        if (currentState === 1) {
+          mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+          mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+          raycaster.setFromCamera(mouse, camera);
+          document.body.style.cursor =
+            raycaster.intersectObject(envelopeGroup, true).length > 0
+              ? "pointer"
+              : "default";
+        }
+      });
+
+      if (window.DeviceOrientationEvent) {
+        window.addEventListener(
+          "deviceorientation",
+          (e) => {
+            if (e.gamma !== null && e.beta !== null) {
+              const tiltX = Math.max(-25, Math.min(25, e.gamma)) / 25;
+              const tiltY = Math.max(-20, Math.min(20, e.beta - 45)) / 20;
+              targetCamOffset.x = tiltX * 0.45;
+              targetCamOffset.y = -tiltY * 0.22;
+            }
+          },
+          { passive: true },
+        );
+      }
+
+      window.addEventListener("pointerdown", (event) => {
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera);
+
+        // 1. Chạm mở phong thư (Scene 1)
+        if (currentState === 1) {
+          if (raycaster.intersectObject(envelopeGroup, true).length > 0) {
+            openEnvelope();
+            return;
+          }
+        }
+
+        // 2. Chạm thắp ngọn nến 3D duy nhất (Scene 3)
+        if (currentState === 3 && candlesLitCount < 1) {
+          const hits = raycaster.intersectObjects(candleObjects, true);
+          if (hits.length > 0) {
+            let hitCandle = hits[0].object;
+            while (
+              hitCandle &&
+              !hitCandle.userData.isCandle &&
+              hitCandle.parent
+            ) {
+              hitCandle = hitCandle.parent;
+            }
+            if (
+              hitCandle &&
+              hitCandle.userData.isCandle &&
+              !hitCandle.userData.isLit
+            ) {
+              lightCandleByIndex(0);
+              return;
+            }
+          }
+        }
+
+        // 3. 3D Easter Eggs
+        if (currentState >= 1 && currentState <= 3) {
+          const hits = raycaster.intersectObjects(decorGroup.children, true);
+          if (hits.length > 0) {
+            let obj = hits[0].object;
+            while (
+              obj &&
+              !obj.userData.isBalloon &&
+              !obj.userData.isGiftBox &&
+              !obj.userData.isMoon &&
+              obj.parent
+            ) {
+              obj = obj.parent;
+            }
+            if (obj) {
+              if (obj.userData.isBalloon) {
+                playSound("boing");
+                gsap.fromTo(
+                  obj.scale,
+                  { x: 1.25, y: 0.78, z: 1.25 },
+                  {
+                    x: 1,
+                    y: 1,
+                    z: 1,
+                    duration: 0.65,
+                    ease: "elastic.out(1.2, 0.3)",
+                  },
+                );
+                confetti({
+                  particleCount: 15,
+                  spread: 50,
+                  startVelocity: 25,
+                  origin: {
+                    x: event.clientX / window.innerWidth,
+                    y: event.clientY / window.innerHeight,
+                  },
+                });
+              } else if (obj.userData.isGiftBox) {
+                playSound("chime");
+                const lid = obj.userData.lid;
+                if (lid) {
+                  gsap.to(lid.position, {
+                    y: obj.userData.baseY + 0.35,
+                    duration: 0.22,
+                    yoyo: true,
+                    repeat: 1,
+                    ease: "power2.out",
+                  });
+                }
+                confetti({
+                  particleCount: 25,
+                  spread: 65,
+                  startVelocity: 30,
+                  origin: {
+                    x: event.clientX / window.innerWidth,
+                    y: event.clientY / window.innerHeight,
+                  },
+                  colors: ["#fbbf24", "#f472b6", "#a78bfa", "#60a5fa"],
+                });
+              } else if (obj.userData.isMoon) {
+                playSound("chime");
+                spawnShootingStar();
+                spawnShootingStar();
+                showToast("Một điều ước vừa vụt qua mặt trăng! ⭐✨");
+              }
+            }
+          }
+        }
+      });
+
+      // ==========================================
+      // KỊCH BẢN CHUYỂN CẢNH (CINEMATIC TIMELINE)
+      // ==========================================
+      function initExperience() {
+        document.getElementById("splash-screen").style.opacity = "0";
+        setTimeout(
+          () =>
+            (document.getElementById("splash-screen").style.display = "none"),
+          1000,
+        );
+        unlockAudio();
+        playSound("bgm");
+        document.getElementById("mute-btn").classList.remove("hidden");
+        document.getElementById("custom-music-btn").classList.remove("hidden");
+
+        camera.position.set(0, 1.9, 9.2);
+        gsap.to(camera.position, {
+          y: 1.5,
+          z: 7,
+          duration: 2.2,
+          ease: "power2.out",
+        });
+
+        setTimeout(() => {
+          if (currentState !== 1) return;
+          const h = document.getElementById("envelope-hint");
+          h.classList.remove("hidden");
+          requestAnimationFrame(() => (h.style.opacity = "1"));
+        }, 1200);
+        currentState = 1;
+        createStars();
+        renderGalleryPolaroids();
+      }
+
+      function openEnvelope() {
+        if (currentState !== 1) return;
+        currentState = 1.5;
+        document.body.style.cursor = "default";
+        playSound("paper");
+        const hint = document.getElementById("envelope-hint");
+        hint.style.opacity = "0";
+        setTimeout(() => hint.classList.add("hidden"), 1000);
+
+        gsap.killTweensOf(envelopeGroup.position);
+        gsap.killTweensOf(envelopeGroup.rotation);
+        gsap.killTweensOf(flapPivot.rotation);
+        gsap.killTweensOf(letterMesh.position);
+
+        const tl = gsap.timeline();
+        tl.to(
+          envelopeGroup.position,
+          { x: 0, y: 1.42, z: 0, duration: 0.65, ease: "power2.out" },
+          0,
+        )
+          .to(
+            envelopeGroup.rotation,
+            { x: 0, y: 0, z: 0, duration: 0.65, ease: "power2.out" },
+            0,
+          )
+          .to(
+            flapPivot.rotation,
+            { x: -Math.PI * 0.94, duration: 0.95, ease: "power2.inOut" },
+            0.45,
+          )
+          .to(
+            letterMesh.position,
+            { y: 0.85, duration: 0.75, ease: "power1.inOut" },
+            1.1,
+          )
+          .call(() => scene.attach(letterMesh), null, 1.88)
+          .to(
+            letterMesh.position,
+            {
+              x: 0,
+              y: view.letterY,
+              z: view.letterZ,
+              duration: 1.35,
+              ease: "power2.out",
+            },
+            1.9,
+          )
+          .to(
+            letterMesh.rotation,
+            { x: 0, y: 0, z: 0, duration: 1.35, ease: "power2.out" },
+            1.9,
+          )
+          .call(() => playSound("chime"), null, 2.4)
+          .to(
+            envelopeGroup.position,
+            { y: -2.6, z: -0.25, duration: 1.1, ease: "power2.in" },
+            2.1,
+          )
+          .to(
+            envelopeGroup.rotation,
+            { z: -0.08, duration: 1.0, ease: "power1.in" },
+            2.1,
+          );
+
+        tl.call(
+          () => {
+            const ui = document.getElementById("letter-ui");
+            ui.classList.remove("hidden");
+            requestAnimationFrame(() => {
+              ui.style.opacity = "1";
+            });
+          },
+          null,
+          3.4,
+        );
+      }
+
+      function startScene2() {
+        currentState = 2;
+        const letterUi = document.getElementById("letter-ui");
+        letterUi.style.opacity = "0";
+        setTimeout(() => letterUi.classList.add("hidden"), 500);
+
+        gsap.to(letterMesh.position, {
+          y: 11,
+          z: -6,
+          duration: 1.5,
+          ease: "power2.in",
+        });
+        gsap.to(camera.position, { y: 2.0, duration: 2.5, ease: "power2.out" });
+        gsap.to(camera.rotation, { x: 0.1, duration: 2.5, ease: "power2.out" });
+
+        const countdownUi = document.getElementById("countdown-ui");
+        countdownUi.classList.remove("hidden");
+        setTimeout(() => (countdownUi.style.opacity = "1"), 500);
+
+        const countText = document.getElementById("countdown-text");
+        let tl = gsap.timeline({ delay: 0.8 });
+        [3, 2, 1].forEach((num, index) => {
+          tl.call(
+            () => {
+              playSound("tick");
+              countText.innerText = num;
+              gsap.fromTo(
+                countText,
+                { scale: 0.2, opacity: 0 },
+                { scale: 1, opacity: 1, duration: 0.4, ease: "back.out(2)" },
+              );
+              gsap.to(countText, {
+                opacity: 0,
+                scale: 1.5,
+                duration: 0.3,
+                delay: 0.7,
+              });
+            },
+            null,
+            index * 1.0,
+          );
+        });
+
+        tl.call(explodeFireworks, null, 3.0);
+      }
+
+      function createStars() {
+        if (starsParticles) return;
+        const n = 1200;
+        const pos = new Float32Array(n * 3),
+          col = new Float32Array(n * 3),
+          size = new Float32Array(n),
+          ph = new Float32Array(n),
+          c = new THREE.Color();
+        const starPalette = [0xffffff, 0xd8eeff, 0xffe8d6, 0xffd166, 0xedd8ff];
+
+        for (let i = 0; i < n; i++) {
+          const radius = 62 + Math.random() * 18;
+          const u = Math.random();
+          const phi = Math.acos(1.0 - u * 0.86);
+          const theta = Math.random() * Math.PI * 2;
+
+          pos[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+          pos[i * 3 + 1] = radius * Math.cos(phi) - 2;
+          pos[i * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
+
+          const hex =
+            starPalette[Math.floor(Math.random() * starPalette.length)];
+          c.setHex(hex);
+
+          const heightRatio = Math.max(
+            0.15,
+            Math.min(1.0, (pos[i * 3 + 1] + 2) / 40),
+          );
+          c.multiplyScalar(0.55 + 0.45 * heightRatio);
+
+          col[i * 3] = c.r;
+          col[i * 3 + 1] = c.g;
+          col[i * 3 + 2] = c.b;
+          size[i] =
+            (Math.random() < 0.08
+              ? 0.35 + Math.random() * 0.35
+              : 0.09 + Math.random() * 0.16) * heightRatio;
+          ph[i] = Math.random();
+        }
+        starsParticles = sparkPoints(pos, col, size, ph);
+        starsParticles.material.uniforms.uOpacity.value = 0.45;
+        scene.add(starsParticles);
+      }
+
+      function spawnShootingStar() {
+        if (currentState < 1 || currentState > 3) return;
+        const phi = Math.random() * 0.45 + 0.2;
+        const theta = Math.random() * Math.PI * 2;
+        const r = 70;
+        const sx = r * Math.sin(phi) * Math.cos(theta);
+        const sy = r * Math.cos(phi);
+        const sz = r * Math.sin(phi) * Math.sin(theta);
+
+        const targetX = sx + (Math.random() - 0.5) * 35;
+        const targetY = sy - (12 + Math.random() * 8);
+        const targetZ = sz + (Math.random() - 0.5) * 35;
+
+        const dx = targetX - sx,
+          dy = targetY - sy,
+          dz = targetZ - sz;
+        const len = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
+        const speed = 1.1 + Math.random() * 0.6;
+
+        const lineGeo = new THREE.BufferGeometry();
+        lineGeo.setAttribute(
+          "position",
+          new THREE.BufferAttribute(
+            new Float32Array([sx, sy, sz, sx, sy, sz]),
+            3,
+          ),
+        );
+        const lineMat = new THREE.LineBasicMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: 1,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        });
+        const mesh = new THREE.Line(lineGeo, lineMat);
+        scene.add(mesh);
+
+        shootingStars.push({
+          mesh,
+          x: sx,
+          y: sy,
+          z: sz,
+          vx: (dx / len) * speed,
+          vy: (dy / len) * speed,
+          vz: (dz / len) * speed,
+          tail: 3.5 + Math.random() * 2.5,
+          life: 1.0,
+          decay: 0.02 + Math.random() * 0.015,
+        });
+      }
+
+      function explodeFireworks() {
+        document.getElementById("countdown-ui").classList.add("hidden");
+        playSound("pop");
+
+        const confettiColors = [
+          "#ff496c",
+          "#ffc857",
+          "#62e7ff",
+          "#a78bfa",
+          "#7dffb3",
+          "#ffffff",
+          "#ff8a3d",
+        ];
+        confetti({
+          particleCount: 220,
+          spread: 160,
+          startVelocity: 85,
+          gravity: 0.8,
+          origin: { y: 1.1 },
+          colors: confettiColors,
+        });
+
+        const endConfetti = Date.now() + 2000;
+        (function frame() {
+          confetti({
+            particleCount: 8,
+            angle: 60,
+            spread: 55,
+            origin: { x: 0, y: 0.9 },
+            colors: confettiColors,
+          });
+          confetti({
+            particleCount: 8,
+            angle: 120,
+            spread: 55,
+            origin: { x: 1, y: 0.9 },
+            colors: confettiColors,
+          });
+          if (Date.now() < endConfetti) requestAnimationFrame(frame);
+        })();
+
+        const dateBanner = document.getElementById("date-banner-ui");
+        dateBanner.classList.remove("hidden");
+        dateBanner.classList.add("flex");
+        requestAnimationFrame(() => (dateBanner.style.opacity = "1"));
+        gsap.fromTo(
+          "#date-banner-ui > div",
+          { scale: 0.6, y: -25 },
+          { scale: 1, y: 0, duration: 0.8, ease: "back.out(1.8)" },
+        );
+        setTimeout(() => {
+          gsap.to(dateBanner, {
+            opacity: 0,
+            duration: 1.2,
+            onComplete: () => dateBanner.classList.add("hidden"),
+          });
+        }, 5000);
+
+        setTimeout(() => {
+          if (starsParticles) {
+            gsap.to(starsParticles.material.uniforms.uOpacity, {
+              value: 1.0,
+              duration: 2.2,
+            });
+          }
+          gsap.to(ambientLight, { intensity: 0.04, duration: 2 });
+          gsap.to(spotLight, { intensity: 0.15, duration: 2 });
+        }, 2200);
+
+        setTimeout(() => {
+          if (currentState === 2) {
+            const nav = document.getElementById("fireworks-nav-ui");
+            nav.classList.remove("hidden");
+            nav.classList.add("flex");
+            requestAnimationFrame(() => (nav.style.opacity = "1"));
+          }
+        }, 4000);
+
+        setTimeout(() => {
+          if (currentState !== 2) return;
+          const sx = Math.min(1, camera.aspect / 1.2);
+          const launches = [
+            [-3.4, 3.8, -3, 0xff496c, 0, "circle"],
+            [3.2, 4.4, -3.5, 0x62e7ff, 380, "star"],
+            [0, 4.9, -4, 0xffd166, 950, "dust"],
+            [-2.4, 4.3, -4, 0xff7eb3, 1750, "star"],
+            [2.6, 4.1, -3, 0xa78bfa, 2250, "circle"],
+            [-3.8, 4.8, -5, 0x7dffb3, 2800, "dust"],
+            [0.2, 4.7, -4.5, 0xffc857, 3450, "star"],
+            [3.6, 5.0, -5, 0xff496c, 4000, "circle"],
+            [-1.9, 4.2, -3.5, 0x62e7ff, 4550, "dust"],
+            [-3.0, 4.5, -4, 0xffffff, 5150, "star"],
+            [3.0, 4.7, -4, 0xff7eb3, 5600, "circle"],
+            [0, 5.2, -4.5, 0xfbbf24, 6000, "dust"],
+          ];
+          launches.forEach(([x, y, z, c, d, t]) =>
+            launchFirework(x * sx, y, z, c, d, t),
+          );
+        }, 3500);
+
+        scene3TimeoutId = setTimeout(startScene3, 12500);
+      }
+
+      function skipToScene3() {
+        if (scene3TimeoutId) clearTimeout(scene3TimeoutId);
+        startScene3();
+      }
+
+      function startScene3() {
+        if (currentState === 3) return;
+        currentState = 3;
+
+        const fnav = document.getElementById("fireworks-nav-ui");
+        fnav.style.opacity = "0";
+        setTimeout(() => fnav.classList.add("hidden"), 500);
+
+        gsap.to(ambientLight, { intensity: 0.15, duration: 2.5 });
+        gsap.to(spotLight, { intensity: 1.25, duration: 2.5 });
+
+        gsap.to(camera.position, {
+          y: 2.5,
+          z: view.cakeZ,
+          duration: 2.8,
+          ease: "power2.inOut",
+        });
+        gsap.to(
+          camera.rotation,
+          { x: -0.15, duration: 2.8, ease: "power2.inOut" },
+          "<",
+        );
+
+        gsap.to(cakeGroup.position, {
+          y: -0.5,
+          duration: 3,
+          ease: "back.out(1.1)",
+        });
+        gsap.to(cakeGroup.rotation, {
+          y: (Math.PI * 4) / 3,
+          duration: 3,
+          ease: "power2.out",
+        });
+
+        candlesLitCount = 0;
+        candleObjects.forEach((c) => (c.userData.isLit = false));
+        flames.forEach((f) => f.scale.set(0, 0, 0));
+        candleLight.intensity = 0;
+
+        setTimeout(() => {
+          const ui = document.getElementById("cake-ui");
+          ui.classList.remove("hidden");
+          ui.classList.add("flex");
+          setTimeout(() => {
+            ui.style.opacity = "1";
+            playSound("hb");
+          }, 50);
+        }, 2800);
+      }
+
+      // ==========================================
+      // THẮP NẾN & THỔI NẾN MICROPHONE
+      // ==========================================
+      function lightNextCandle() {
+        if (candleObjects.length > 0 && !candleObjects[0].userData.isLit) {
+          lightCandleByIndex(0);
+        }
+      }
+
+      function lightCandleByIndex(idx) {
+        if (idx !== 0 || !candleObjects[0]) return;
+        const candle = candleObjects[0];
+        if (candle.userData.isLit) return;
+
+        candle.userData.isLit = true;
+        candlesLitCount = 1;
+
+        playSound("match");
+
+        const f = flames[0];
+        f.scale.set(0, 0, 0);
+        gsap.to(f.scale, {
+          x: 1.15,
+          y: 1.15,
+          z: 1.15,
+          duration: 0.65,
+          ease: "back.out(2)",
+        });
+
+        // Tạo hiệu ứng ánh sáng hội tụ: nến sáng rực, dịu bớt đèn spotlight
+        gsap.to(candleLight, { intensity: 1.8, duration: 0.6 });
+        gsap.to(spotLight, { intensity: 0.8, duration: 1.0 });
+
+        const wp = new THREE.Vector3();
+        f.getWorldPosition(wp);
+        createFireworkParticles(wp.x, wp.y + 0.1, wp.z, 0xfbbf24, "dust");
+
+        setTimeout(() => {
+          playSound("chime");
+          showToast(
+            "Ngọn lửa ước mơ đã sáng! Hãy cùng nhắm mắt ước nguyện nhé ✨",
+          );
+
+          const lightPanel = document.getElementById("candle-light-panel");
+          lightPanel.classList.add("hidden");
+
+          const blowPanel = document.getElementById("candle-blow-panel");
+          blowPanel.classList.remove("hidden");
+          blowPanel.classList.add("flex");
+
+          initMicrophoneBlowDetection();
+        }, 700);
+      }
+
+      let micStream = null,
+        micAnalyser = null,
+        micInterval = null;
+      function initMicrophoneBlowDetection() {
+        if (candlesOut) return;
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia)
+          return;
+
+        navigator.mediaDevices
+          .getUserMedia({ audio: true, video: false })
+          .then((stream) => {
+            if (candlesOut) {
+              stream.getTracks().forEach((t) => t.stop());
+              return;
+            }
+            micStream = stream;
+            const micSource = actx.createMediaStreamSource(stream);
+            micAnalyser = actx.createAnalyser();
+            micAnalyser.fftSize = 256;
+            micAnalyser.smoothingTimeConstant = 0.2;
+            micSource.connect(micAnalyser);
+
+            const micStatusEl = document.getElementById("mic-status");
+            micStatusEl.classList.remove("hidden");
+            micStatusEl.classList.add("inline-flex");
+
+            const dataArray = new Uint8Array(micAnalyser.frequencyBinCount);
+            let blowHitCount = 0;
+
+            micInterval = setInterval(() => {
+              if (candlesOut) {
+                stopMicrophone();
+                return;
+              }
+              micAnalyser.getByteFrequencyData(dataArray);
+
+              let lowEnergy = 0;
+              for (let i = 1; i < 18; i++) lowEnergy += dataArray[i];
+              lowEnergy = lowEnergy / 17;
+
+              if (lowEnergy > 85) {
+                blowHitCount++;
+                if (blowHitCount >= 3) {
+                  blowCandles();
+                  stopMicrophone();
+                }
+              } else {
+                blowHitCount = Math.max(0, blowHitCount - 1);
+              }
+            }, 80);
+          })
+          .catch(() => {
+            console.info(
+              "Microphone permission skipped/denied, fallback to manual button.",
+            );
+          });
+      }
+
+      function stopMicrophone() {
+        if (micInterval) clearInterval(micInterval);
+        if (micStream) {
+          micStream.getTracks().forEach((t) => t.stop());
+          micStream = null;
+        }
+        const micStatusEl = document.getElementById("mic-status");
+        if (micStatusEl) micStatusEl.classList.add("hidden");
+      }
+
+      function blowCandles() {
+        if (candlesOut) return;
+        candlesOut = true;
+        stopMicrophone();
+        playSound("blow");
+        document.getElementById("cake-hint").innerText =
+          "Điều ước đã được gửi đi! Cắt bánh thôi nào! ✨";
+
+        flames.forEach((f) =>
+          gsap.to(f.scale, {
+            x: 0,
+            y: 0,
+            z: 0,
+            duration: 0.35,
+            ease: "back.in(2)",
+          }),
+        );
+        gsap.to(candleLight, { intensity: 0, duration: 0.3 });
+        gsap.to(ambientLight, { intensity: 0.4, duration: 1.5 });
+        gsap.to(spotLight, { intensity: 1.8, duration: 1.5 });
+
+        const wp = new THREE.Vector3();
+        flames.forEach((f) => {
+          f.getWorldPosition(wp);
+          for (let i = 0; i < 5; i++) {
+            const smoke = new THREE.Mesh(
+              smokeSharedGeo,
+              smokeSharedMat.clone(),
+            );
+            smoke.position.copy(wp);
+            smoke.position.y += 0.1 + Math.random() * 0.1;
+            scene.add(smoke);
+            smokeParticles.push({
+              mesh: smoke,
+              life: 1.0,
+              speedX: (Math.random() - 0.5) * 0.012,
+              speedY: 0.014 + Math.random() * 0.012,
+            });
+          }
+        });
+
+        document.getElementById("btn-blow").classList.add("hidden");
+        const btnCut = document.getElementById("btn-cut");
+        btnCut.classList.remove("hidden");
+        btnCut.classList.add("flex");
+      }
+
+      function cutCake() {
+        const ui = document.getElementById("cake-ui");
+        ui.style.opacity = "0";
+        setTimeout(() => ui.classList.add("hidden"), 500);
+
+        const R = 2.5,
+          top = 2.6,
+          low = -0.05;
+        const place = (deg) => {
+          const a = (deg * Math.PI) / 180;
+          knife.position.set(Math.cos(a) * R, top, -Math.sin(a) * R);
+          knife.rotation.set(0, a - Math.PI / 2, 0);
+        };
+
+        knife.visible = true;
+        const tl = gsap.timeline();
+        [0, 60].forEach((deg) => {
+          tl.call(() => place(deg))
+            .to(knife.position, { y: low, duration: 0.7, ease: "power2.in" })
+            .call(() => playSound("knife"))
+            .to({}, { duration: 0.25 })
+            .to(knife.position, { y: top, duration: 0.5, ease: "power2.out" });
+        });
+
+        tl.call(() => {
+          cutFaces.forEach((f) => (f.visible = true));
+          playSound("cheer");
+          confetti({ particleCount: 120, spread: 90, origin: { y: 0.7 } });
+        })
+          .to(sliceGroup.position, {
+            x: Math.cos(Math.PI / 6) * 0.9,
+            z: -Math.sin(Math.PI / 6) * 0.9,
+            duration: 1.4,
+            ease: "power2.inOut",
+          })
+          .to(knife.position, { y: 6, duration: 0.6 }, "<")
+          .call(() => {
+            const cnav = document.getElementById("cake-nav-ui");
+            cnav.classList.remove("hidden");
+            cnav.classList.add("flex");
+            requestAnimationFrame(() => (cnav.style.opacity = "1"));
+          });
+
+        outroTimeoutId = setTimeout(startOutro, 6500);
+      }
+
+      function startOutro() {
+        if (currentState === 4) return;
+        currentState = 4;
+        if (outroTimeoutId) clearTimeout(outroTimeoutId);
+
+        const cnav = document.getElementById("cake-nav-ui");
+        if (cnav) cnav.classList.add("hidden");
+
+        const curtain = document.getElementById("cinematic-curtain");
+        curtain.classList.remove("pointer-events-none");
+        gsap.to(curtain, {
+          opacity: 1,
+          duration: 1.0,
+          ease: "power2.inOut",
+          onComplete: () => {
+            document
+              .getElementById("webgl-container")
+              .classList.add("blur-canvas");
+            const outro = document.getElementById("outro-gallery");
+            outro.classList.remove("hidden");
+            outro.classList.add("flex");
+            outro.style.opacity = "1";
+
+            gsap.from(".polaroid", {
+              y: 50,
+              opacity: 0,
+              duration: 0.8,
+              stagger: 0.12,
+              ease: "power2.out",
+              delay: 0.2,
+            });
+
+            gsap.to(curtain, {
+              opacity: 0,
+              duration: 1.2,
+              delay: 0.4,
+              ease: "power2.out",
+              onComplete: () => curtain.classList.add("pointer-events-none"),
+            });
+          },
+        });
+      }
+
+      // ==========================================
+      // RENDER POLAROID GALLERY DỰA TRÊN CONFIG
+      // ==========================================
+      function renderGalleryPolaroids() {
+        document.getElementById("gallery-title").innerText =
+          CONFIG.gallery.title;
+        document.getElementById("gallery-subtitle").innerText =
+          CONFIG.gallery.subtitle;
+        document.getElementById("gallery-footer-text").innerText =
+          `Được làm riêng cho ${CONFIG.recipientName} 💖`;
+
+        const container = document.getElementById("polaroid-container");
+        container.innerHTML = "";
+
+        CONFIG.gallery.items.forEach((item) => {
+          const card = document.createElement("div");
+          card.className = `polaroid ${item.offset || ""}`;
+          card.style.transform = `rotate(${item.rotate || "0deg"})`;
+          card.onclick = () => openPhotoModal(item.url, item.caption);
+
+          card.innerHTML = `
+            <div class="relative overflow-hidden rounded-sm bg-gray-100 mb-3 h-52">
+              <img src="${item.url}" alt="${item.caption}" loading="lazy" class="w-full h-full object-cover transition-transform duration-300 hover:scale-105" onerror="handleImageError(this, '${item.caption}')" />
+              <span class="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[11px] font-sans font-semibold tracking-wider text-roseGold bg-white/90 backdrop-blur-sm shadow-sm">${CONFIG.birthdayDate}</span>
+            </div>
+            <p class="font-handwriting text-2xl text-center text-gray-700 select-none">${item.caption}</p>
+          `;
+          container.appendChild(card);
+        });
+      }
+
+      function handleImageError(imgEl, caption) {
+        const parent = imgEl.parentElement;
+        parent.innerHTML = `
+          <div class="w-full h-full flex flex-col items-center justify-center bg-gradient-to-tr from-rose-100 via-pink-50 to-amber-100 text-roseGold p-4 text-center">
+            <span class="text-3xl mb-1">✨</span>
+            <span class="font-serif italic text-xs text-gray-600">${caption}</span>
+          </div>
+        `;
+      }
+
+      function openPhotoModal(src, caption) {
+        const modal = document.getElementById("photo-modal");
+        document.getElementById("modal-img").src = src;
+        document.getElementById("modal-caption").innerText = caption;
+        modal.classList.remove("hidden");
+        requestAnimationFrame(() => (modal.style.opacity = "1"));
+      }
+
+      function closePhotoModal() {
+        const modal = document.getElementById("photo-modal");
+        modal.style.opacity = "0";
+        setTimeout(() => modal.classList.add("hidden"), 300);
+      }
+
+      function burstMoreConfetti() {
+        playSound("cheer");
+        confetti({
+          particleCount: 80,
+          spread: 100,
+          origin: { y: 0.6 },
+          colors: ["#ff496c", "#ffc857", "#62e7ff", "#a78bfa", "#ff7eb3"],
+        });
+      }
+
+      function sendReplyMessage() {
+        playSound("click");
+        const replyMsg = `Cảm ơn bạn rất nhiều vì món quà sinh nhật ${CONFIG.birthdayDate} siêu đỉnh và ấm áp nhé! Tớ thích lắm luôn! 🎉✨💖`;
+
+        if (navigator.share) {
+          navigator
+            .share({
+              title: `Lời cảm ơn sinh nhật ${CONFIG.birthdayDate}`,
+              text: replyMsg,
+            })
+            .catch(() => copyToClipboardNotice(replyMsg));
+        } else {
+          copyToClipboardNotice(replyMsg);
+        }
+      }
+
+      function copyToClipboardNotice(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard
+            .writeText(text)
+            .then(() => {
+              showToast(
+                "Đã sao chép lời nhắn! Dán gửi lại cho người tặng nhé 💌",
+              );
+            })
+            .catch(() => {
+              showToast("Cảm ơn vì món quà sinh nhật tuyệt vời! 💖");
+            });
+        } else {
+          showToast("Cảm ơn vì món quà sinh nhật tuyệt vời! 💖");
+        }
+      }
+
+      function showToast(msg) {
+        const toast = document.getElementById("toast-notice");
+        toast.innerText = msg;
+        toast.classList.remove("opacity-0", "translate-y-8");
+        toast.classList.add("opacity-100", "translate-y-0");
+        setTimeout(() => {
+          toast.classList.remove("opacity-100", "translate-y-0");
+          toast.classList.add("opacity-0", "translate-y-8");
+        }, 3200);
+      }
+
+      function downloadGreetingCard() {
+        playSound("pop");
+        const c = document.createElement("canvas");
+        c.width = 1200;
+        c.height = 1600;
+        const g = c.getContext("2d");
+
+        // 1. Nền hồng phấn pastel dịu dàng theo mẫu thiệp
+        const bgGrad = g.createLinearGradient(0, 0, 0, 1600);
+        bgGrad.addColorStop(0, "#fff5f7");
+        bgGrad.addColorStop(0.5, "#fdf0f4");
+        bgGrad.addColorStop(1, "#fae6ec");
+        g.fillStyle = bgGrad;
+        g.fillRect(0, 0, 1200, 1600);
+
+        // 2. Viền đôi trang nhã với hoa văn góc
+        g.strokeStyle = "rgba(216, 154, 166, 0.65)";
+        g.lineWidth = 2.5;
+        g.strokeRect(45, 45, 1110, 1510);
+
+        g.strokeStyle = "rgba(224, 170, 180, 0.4)";
+        g.lineWidth = 1;
+        g.strokeRect(58, 58, 1084, 1484);
+
+        // Các điểm chấm tinh tế ở 4 góc viền
+        g.fillStyle = "#c57b86";
+        [
+          [58, 58],
+          [1142, 58],
+          [58, 1542],
+          [1142, 1542],
+        ].forEach(([cx, cy]) => {
+          g.beginPath();
+          g.arc(cx, cy, 3.5, 0, Math.PI * 2);
+          g.fill();
+        });
+
+        // 3. Huy hiệu bo tròn trên đầu
+        const badgeW = 380,
+          badgeH = 50,
+          bx = (1200 - badgeW) / 2,
+          by = 120;
+        g.fillStyle = "rgba(255, 238, 243, 0.9)";
+        g.beginPath();
+        g.roundRect(bx, by, badgeW, badgeH, 25);
+        g.fill();
+        g.strokeStyle = "rgba(216, 154, 166, 0.75)";
+        g.lineWidth = 1.5;
+        g.stroke();
+
+        g.textAlign = "center";
+        g.fillStyle = "#b85d6d";
+        g.font = "bold 22px 'Be Vietnam Pro', sans-serif";
+        g.fillText(`★ ${CONFIG.birthdayDate} • SPECIAL MEMORY ★`, 600, 152);
+
+        // 4. Tiêu đề "Chúc Mừng Sinh Nhật!" nghệ thuật
+        g.fillStyle = "#b84d62";
+        g.font = "bold 105px 'Caveat', 'Dancing Script', cursive, sans-serif";
+        g.fillText("Chúc Mừng Sinh Nhật!", 600, 268);
+
+        // Ba dấu chấm trang trí
+        g.fillStyle = "#d89aa6";
+        g.font = "bold 26px serif";
+        g.fillText("•  •  •", 600, 318);
+
+        // 5. Lời mở đầu
+        g.fillStyle = "#8a2b43";
+        g.font = "bold 66px 'Caveat', 'Dancing Script', cursive, sans-serif";
+        g.fillText(CONFIG.letter.greeting, 600, 415);
+
+        // 6. Các dòng lời chúc
+        g.fillStyle = "#4a383d";
+        g.font = "italic 38px 'Playfair Display', 'Be Vietnam Pro', serif";
+        CONFIG.letter.lines.forEach((line, i) => {
+          g.fillText(line, 600, 520 + i * 82);
+        });
+
+        // (Đã loại bỏ dòng khoanh đỏ: "Cùng mở quà và quẩy tiệc nào! 🎉✨")
+
+        // 7. Con dấu tròn kỷ niệm ngày sinh nhật
+        g.beginPath();
+        g.arc(600, 990, 115, 0, Math.PI * 2);
+        g.fillStyle = "rgba(255, 255, 255, 0.8)";
+        g.fill();
+        g.strokeStyle = "rgba(216, 154, 166, 0.85)";
+        g.lineWidth = 2.5;
+        g.stroke();
+
+        g.beginPath();
+        g.arc(600, 990, 107, 0, Math.PI * 2);
+        g.strokeStyle = "rgba(216, 154, 166, 0.35)";
+        g.lineWidth = 1;
+        g.stroke();
+
+        g.fillStyle = "#b84d62";
+        g.font = "bold 62px 'Playfair Display', serif";
+        g.fillText(CONFIG.birthdayDate, 600, 982);
+
+        g.fillStyle = "#8c5360";
+        g.font = "bold 20px 'Be Vietnam Pro', sans-serif";
+        g.fillText("HAPPY BIRTHDAY", 600, 1022);
+
+        // 8. Lời đề tặng
+        g.fillStyle = "#a04055";
+        g.font = "bold 34px 'Be Vietnam Pro', sans-serif";
+        g.fillText(
+          `Dành tặng ${CONFIG.recipientName} một tuổi mới thật rực rỡ và thành công! ✨`,
+          600,
+          1245,
+        );
+
+        // (Đã loại bỏ phần khoanh đỏ cuối và THÊM KÍ TÊN TIẾN DŨNG)
+        g.fillStyle = "#9c6d77";
+        g.font = "italic 24px 'Playfair Display', 'Be Vietnam Pro', serif";
+        g.fillText("Ký tặng", 600, 1335);
+
+        g.fillStyle = "#b84d62";
+        g.font = "bold 64px 'Caveat', 'Dancing Script', cursive, sans-serif";
+        g.fillText("Tiến Dũng ✍️", 600, 1400);
+
+        const link = document.createElement("a");
+        link.download = `Thiep_Sinh_Nhat_${CONFIG.birthdayDate.replace("/", "_")}_${CONFIG.recipientName.replace(/\s+/g, "_")}.png`;
+        link.href = c.toDataURL("image/png");
+        link.click();
+      }
+
+      // ==========================================
+      // ANIMATION LOOP (TỐI ƯU VÀ DỌN RÁC BỘ NHỚ)
+      // ==========================================
+      const clock = new THREE.Clock();
+      function animate() {
+        requestAnimationFrame(animate);
+        const dt = Math.min(clock.getDelta() * 60, 3);
+        fxUniforms.uTime.value = clock.elapsedTime;
+
+        if (flames.length && !candlesOut) {
+          const tt = clock.elapsedTime;
+          flames.forEach((f) => {
+            if (f.scale.x > 0.01) {
+              f.scale.y =
+                1.15 + Math.sin(tt * 14) * 0.12 + Math.sin(tt * 31) * 0.05;
+              f.scale.x = 1.15 + Math.sin(tt * 11) * 0.07;
+              f.rotation.z = Math.sin(tt * 9) * 0.07;
+            }
+          });
+          if (candleLight && candlesLitCount > 0) {
+            candleLight.intensity = 1.7 + Math.sin(tt * 14) * 0.2;
+          }
+        }
+
+        if (skyDome) {
+          skyDome.rotation.y = clock.elapsedTime * 0.005;
+        }
+        if (starsParticles) {
+          starsParticles.rotation.y = clock.elapsedTime * 0.008;
+        }
+
+        const curT = clock.elapsedTime;
+        balloons.forEach((b) => {
+          b.mesh.position.y =
+            b.baseY + Math.sin(curT * b.speed + b.phase) * 0.12;
+          b.mesh.rotation.z = Math.sin(curT * (b.speed * 0.8) + b.phase) * 0.04;
+          b.mesh.rotation.x = Math.cos(curT * (b.speed * 0.6) + b.phase) * 0.03;
+        });
+
+        if (fairyDust) {
+          const dPos = fairyDust.geometry.attributes.position.array;
+          const dVels = fairyDust.geometry.userData.vels;
+          for (let i = 0; i < dVels.length; i++) {
+            dPos[i * 3 + 1] += dVels[i].vy * dt;
+            dPos[i * 3] +=
+              Math.sin(curT * 1.4 + dVels[i].phase) * dVels[i].sway * dt;
+            if (dPos[i * 3 + 1] > 4.6) {
+              dPos[i * 3 + 1] = -1.7;
+            }
+          }
+          fairyDust.geometry.attributes.position.needsUpdate = true;
+        }
+
+        skyLanterns.forEach((lt) => {
+          lt.mesh.position.y += lt.speedY * dt;
+          lt.mesh.position.x =
+            lt.baseX + Math.sin(curT * lt.swaySpeed + lt.phase) * lt.swayAmp;
+          lt.mesh.rotation.z =
+            Math.sin(curT * lt.swaySpeed + lt.phase) * lt.tilt;
+          if (lt.mesh.position.y > 24) {
+            lt.mesh.position.y = -2.5;
+          }
+        });
+
+        fairyBulbs.forEach((b) => {
+          const br = 0.5 + 0.5 * Math.sin(curT * b.speed + b.phase);
+          b.glow.material.opacity = 0.4 + br * 0.45;
+          b.glow.scale.setScalar(0.28 + br * 0.14);
+        });
+
+        if (firefliesMesh) {
+          const pArr = firefliesMesh.geometry.attributes.position.array;
+          for (let i = 0; i < fireflyData.length; i++) {
+            const fd = fireflyData[i];
+            pArr[i * 3] =
+              fd.baseX + Math.sin(curT * fd.speedX + fd.phase) * fd.ampX;
+            pArr[i * 3 + 1] =
+              fd.baseY + Math.cos(curT * fd.speedY + fd.phase) * fd.ampY;
+            pArr[i * 3 + 2] =
+              fd.baseZ + Math.sin(curT * fd.speedZ + fd.phase * 1.5) * fd.ampZ;
+          }
+          firefliesMesh.geometry.attributes.position.needsUpdate = true;
+          firefliesMesh.material.opacity = 0.5 + 0.4 * Math.sin(curT * 2.8);
+        }
+
+        if (currentState <= 3) {
+          camera.position.x +=
+            (targetCamOffset.x - camera.position.x) * 0.04 * dt;
+          camera.rotation.y = -camera.position.x * 0.06;
+        }
+
+        if (
+          clock.elapsedTime > nextShootingStarTime &&
+          currentState >= 1 &&
+          currentState <= 3
+        ) {
+          spawnShootingStar();
+          nextShootingStarTime = clock.elapsedTime + 4 + Math.random() * 4.5;
+        }
+
+        for (let i = shootingStars.length - 1; i >= 0; i--) {
+          const s = shootingStars[i];
+          s.x += s.vx * dt;
+          s.y += s.vy * dt;
+          s.z += s.vz * dt;
+          s.life -= s.decay * dt;
+          s.mesh.material.opacity = Math.max(0, s.life);
+
+          const posArr = s.mesh.geometry.attributes.position.array;
+          posArr[0] = s.x;
+          posArr[1] = s.y;
+          posArr[2] = s.z;
+          posArr[3] = s.x - s.vx * s.tail;
+          posArr[4] = s.y - s.vy * s.tail;
+          posArr[5] = s.z - s.vz * s.tail;
+          s.mesh.geometry.attributes.position.needsUpdate = true;
+
+          if (s.life <= 0) {
+            scene.remove(s.mesh);
+            s.mesh.geometry.dispose();
+            s.mesh.material.dispose();
+            shootingStars.splice(i, 1);
+          }
+        }
+
+        for (let i = smokeParticles.length - 1; i >= 0; i--) {
+          const p = smokeParticles[i];
+          p.mesh.position.y += p.speedY * dt;
+          p.mesh.position.x += p.speedX * dt;
+          p.mesh.scale.setScalar(1 + (1 - p.life) * 2);
+          p.life -= 0.01 * dt;
+          p.mesh.material.opacity = p.life;
+          if (p.life <= 0) {
+            scene.remove(p.mesh);
+            p.mesh.material.dispose();
+            smokeParticles.splice(i, 1);
+          }
+        }
+
+        for (let i = rocketParticles.length - 1; i >= 0; i--) {
+          const r = rocketParticles[i];
+          r.mesh.position.y += r.speed * dt;
+          r.trail++;
+
+          if (r.trail % 2 === 0) {
+            const trail = new THREE.Points(rocketTrailGeo, rocketTrailMat);
+            trail.position.set(
+              r.mesh.position.x + (Math.random() - 0.5) * 0.03,
+              r.mesh.position.y - 0.08,
+              r.mesh.position.z,
+            );
+            scene.add(trail);
+            fireworkParticles.push({
+              mesh: trail,
+              isShared: true,
+              vels: [{ x: (Math.random() - 0.5) * 0.008, y: -0.015, z: 0 }],
+              life: 0.6,
+              gravity: 0.0004,
+            });
+          }
+
+          if (r.mesh.position.y >= r.targetY) {
+            createFireworkParticles(
+              r.mesh.position.x,
+              r.mesh.position.y,
+              r.mesh.position.z,
+              r.colorHex,
+              r.type,
+            );
+            scene.remove(r.mesh);
+            r.mesh.geometry.dispose();
+            r.mesh.material.dispose();
+            rocketParticles.splice(i, 1);
+          }
+        }
+
+        for (let i = fireworkParticles.length - 1; i >= 0; i--) {
+          const fw = fireworkParticles[i];
+          if (!fw.isShared) {
+            const positions = fw.mesh.geometry.attributes.position.array;
+            for (let j = 0; j < positions.length; j += 3) {
+              const v = fw.vels[j / 3];
+              positions[j] += v.x * dt;
+              positions[j + 1] += v.y * dt;
+              v.y -= (fw.gravity || 0.0016) * dt;
+              v.x *= Math.pow(0.992, dt);
+              v.z *= Math.pow(0.992, dt);
+              positions[j + 2] += v.z * dt;
+            }
+            fw.mesh.geometry.attributes.position.needsUpdate = true;
+          } else {
+            const v = fw.vels[0];
+            fw.mesh.x = fw.mesh.position.x += v.x * dt;
+            fw.mesh.y = fw.mesh.position.y += v.y * dt;
+          }
+
+          fw.life -= 0.009 * dt;
+          if (fw.mesh.material.uniforms) {
+            fw.mesh.material.uniforms.uOpacity.value = Math.max(0, fw.life);
+          } else {
+            fw.mesh.material.opacity = Math.max(0, fw.life);
+          }
+
+          if (fw.life <= 0) {
+            scene.remove(fw.mesh);
+            if (!fw.isShared) {
+              fw.mesh.geometry.dispose();
+              fw.mesh.material.dispose();
+            }
+            fireworkParticles.splice(i, 1);
+          }
+        }
+
+        renderer.render(scene, camera);
+      }
+
+      animate();
+    </script>
+  </body>
+</html>
